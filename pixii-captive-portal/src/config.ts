@@ -1,0 +1,15 @@
+export const EVENT_ID = "amazon-unboxed-sf-2026";
+export const EVENT_SLUG = "amazon-unboxed-sf-2026";
+export const GATEWAY_NAME = "pixii-unboxed-sf-puli-01";
+export const SSID = "unBoxed2026 - Fast";
+export const CONSENT_VERSION = "2026-09-27.v3";
+export const CONSENT_TEXT = "I agree to receive marketing communications from Pixii.ai. Unsubscribe anytime.";
+export const CONNECTING_MINIMUM_MS = 7_000;
+export const SESSION_MINUTES = 480;
+export const IDLE_MINUTES = 30;
+export const UPLOAD_KBPS = 5000;
+export const DOWNLOAD_KBPS = 20000;
+export const DATA_QUOTA_KB = 0;
+export const FORM_BODY_LIMIT = 16_384;
+export const AUTHMON_BODY_LIMIT = 8_192;
+export const BOOTSTRAP_BODY_LIMIT = 4_096;

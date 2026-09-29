@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "account_id": "9423b9bb3bc960f803d00c7718b78cad",
+  "name": "pixii-event-wifi",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-23",
+  "workers_dev": false,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "redact_query_string": true,
+    "logs": { "enabled": true, "invocation_logs": false, "persist": true },
+    "traces": { "enabled": false }
+  },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "none"
+  },
+  "routes": [
+    { "pattern": "wifi.joinpixii.com", "custom_domain": true }
+  ],
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "pixii-event-wifi-production",
+    "database_id": "7355bd32-98f0-41c9-9781-24c9c38e410f"
+  }],
+  "triggers": { "crons": ["17 9 * * *"] },
+  "vars": {
+    "ENVIRONMENT": "production"
+  },
+  "rules": [
+    { "type": "Text", "globs": ["**/*.svg"], "fallthrough": true },
+    { "type": "Data", "globs": ["**/*.webp"], "fallthrough": true }
+  ]
+}

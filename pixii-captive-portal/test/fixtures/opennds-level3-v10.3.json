@@ -1,0 +1,23 @@
+{
+  "source": {
+    "project": "openNDS",
+    "version": "10.3.0",
+    "commit": "62c1dd1093bda1a1762b5e36b945b74bf4aba4c8",
+    "verification": "OpenSSL 3.6.3 equivalent of PHP 8 openssl_encrypt AES-256-CBC options=0; physical router PHP 8 verification required before release"
+  },
+  "plaintext": "clientip=192.168.9.100, clientmac=02:00:00:00:00:01, gatewayname=pixii-unboxed-sf-puli-01, hid=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef, originurl=http%3A%2F%2Fexample.com%2F, clientif=wlan1",
+  "key": "c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646",
+  "iv": "0123456789abcdef",
+  "innerCiphertextBase64": "0lYF+CKJfA78beaeBqpDKD4uI/k0uFqjoV1hh4swGOl6LXsJxyCza4yWbmQHJ/b+H/Y1pMdMD9EMlogJRX3UWMAgV6IbwhRSPRTFCx9GQl1MvSxAdZmILkVHwNn2JhlQ2Yt0bOiIikLI+i2otmNL2pwZUyL8qsBu0AY1Cy5HtcFctH623qIPR5YMs1T94BL1CwjNlz5+3gMx+WnGLTyHc77OOc67xu0ewBS+qGCNJ2YM6vA+V9N5hv2EQaFYFZg7504dwgqDjB4C/Ha37nwU+IaDtE9Rijn6MMhGPqiENgo=",
+  "fas": "MGxZRitDS0pmQTc4YmVhZUJxcERLRDR1SS9rMHVGcWpvVjFoaDRzd0dPbDZMWHNKeHlDemE0eVdibVFISi9iK0gvWTFwTWRNRDlFTWxvZ0pSWDNVV01BZ1Y2SWJ3aFJTUFJURkN4OUdRbDFNdlN4QWRabUlMa1ZId05uMkpobFEyWXQwYk9pSWlrTEkraTJvdG1OTDJwd1pVeUw4cXNCdTBBWTFDeTVIdGNGY3RINjIzcUlQUjVZTXMxVDk0QkwxQ3dqTmx6NSszZ014K1duR0xUeUhjNzdPT2M2N3h1MGV3QlMrcUdDTkoyWU02dkErVjlONWh2MkVRYUZZRlpnNzUwNGR3Z3FEakI0Qy9IYTM3bndVK0lhRHRFOVJpam42TU1oR1BxaUVOZ289",
+  "fields": {
+    "clientip": "192.168.9.100",
+    "clientmac": "02:00:00:00:00:01",
+    "gatewayname": "pixii-unboxed-sf-puli-01",
+    "hid": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "originurl": "http%3A%2F%2Fexample.com%2F",
+    "clientif": "wlan1"
+  },
+  "gatewayHash": "b1f5a813821f8a6a168025e7010fdfac38484bf541da99dfcb4c074ea1a6b7f7",
+  "rhid": "d8d2430fe3f2cd9c1ba774ecba0299bd2d72fe7c4a2e9d8196578eb8449b6afa"
+}
