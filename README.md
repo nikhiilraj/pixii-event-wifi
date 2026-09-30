@@ -57,6 +57,8 @@ Pre-optimized media is committed; the media-preparation scripts are optional uti
 
 ## Publishing an approved change
 
+**Analytics branch:** follow [the gated analytics release checklist](docs/wifi-analytics-release.md) first. This is not a UI-only release: additive migration `0006_analytics.sql` must precede the new Worker code even with tracking disabled. Production migration/deployment require explicit approval; vendor switches ship off.
+
 Run from `pixii-captive-portal/`, after pulling the latest code and passing tests:
 
 ```sh

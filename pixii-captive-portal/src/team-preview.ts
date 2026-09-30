@@ -14,7 +14,8 @@ import {
   type SignupValues
 } from "./portal";
 import { D1Repository } from "./repository";
-import type { Env } from "./types";
+import type { Env, HandlerContext } from "./types";
+import { backgroundAnalytics, enrollment, formTracking } from "./analytics";
 import { parseBody, RequestParseError, validateSignup } from "./validation";
 
 const TEAM_USERNAME = "pixii";
@@ -74,16 +75,16 @@ export function handleTeamTest(request: Request, env: Env): Promise<Response> {
   return handleStandaloneSignup(request, env, "team-test");
 }
 
-export function handlePublicSignup(request: Request, env: Env): Promise<Response> {
-  return handleStandaloneSignup(request, env, "public");
+export function handlePublicSignup(request: Request, env: Env, ctx?: HandlerContext): Promise<Response> {
+  return handleStandaloneSignup(request, env, "public", ctx);
 }
 
-async function handleStandaloneSignup(request: Request, env: Env, mode: "public" | "team-test"): Promise<Response> {
+async function handleStandaloneSignup(request: Request, env: Env, mode: "public" | "team-test", ctx?: HandlerContext): Promise<Response> {
   const renderPage = mode === "public" ? renderPublicSignupPage : renderTeamTestPage;
   const submissionSource = mode === "public" ? "public_web" : "team_test";
   if (request.method === "GET") {
     return secureHtml(renderPage({
-      formState: ""
+      formState: "", analyticsContext: await formTracking(request, env, submissionSource)
     }), 200, FORM_HEADERS);
   }
   const origin = request.headers.get("origin");
@@ -105,7 +106,8 @@ async function handleStandaloneSignup(request: Request, env: Env, mode: "public"
     return secureHtml(renderPage({
       formState: "",
       values: signupValues(body),
-      errors: validation.errors
+      errors: validation.errors,
+      analyticsContext: typeof body.analyticsContext === "string" ? body.analyticsContext : ""
     }), 400, FORM_HEADERS);
   }
 
@@ -132,8 +134,10 @@ async function handleStandaloneSignup(request: Request, env: Env, mode: "public"
       authorizationStatus: "acknowledged",
       formIdempotencyKey: `${submissionSource}:${registrationId}`,
       submissionSource,
+      analyticsVisitId: body.analyticsOptOut === "1" ? null : await enrollment(request, env, body.analyticsContext, submissionSource),
       requiresAdGate: true
     });
+    if (ctx) backgroundAnalytics(env, ctx);
     const token = await signStatusState(registrationId, Date.now() + 10 * 60_000, env.FORM_SIGNING_KEY);
     return secureHtml(renderWaitingPage(registrationId, token), 201, FORM_HEADERS);
   } catch {

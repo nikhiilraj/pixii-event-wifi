@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { renderWaitingPage } from "../../src/portal";
 
-const base = "http://127.0.0.1:8787";
+const base = `http://127.0.0.1:${process.env.PIXII_BROWSER_PORT || "8787"}`;
 const destination = "https://www.pixii.ai/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
 async function hide(page: Page, hidden: boolean) {
   await page.evaluate(value => {

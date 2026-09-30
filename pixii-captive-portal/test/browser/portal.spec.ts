@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { createCipheriv, createHash, createHmac, randomBytes } from "node:crypto";
 import vector from "../fixtures/opennds-level3-v10.3.json" with { type: "json" };
 
-const baseUrl = "http://127.0.0.1:8787";
+const baseUrl = `http://127.0.0.1:${process.env.PIXII_BROWSER_PORT || "8787"}`;
 const ctaUrl =
   "https://www.pixii.ai/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
 

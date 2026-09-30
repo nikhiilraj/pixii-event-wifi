@@ -12,7 +12,7 @@ import {
 import type { RegistrationAdminRow } from "./repository";
 
 const PRIVACY_URL = "https://www.pixii.ai/privacy/";
-const PIXII_CTA_URL =
+export const PIXII_CTA_URL =
   "https://www.pixii.ai/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
 
 // Kept identical to the pinned, approved SVG in src/assets/pixii-logo.svg so
@@ -68,6 +68,7 @@ export interface SignupValues {
 
 export interface SignupPageInput {
   formState: string;
+  analyticsContext?: string;
   fas?: string;
   iv?: string;
   values?: Partial<SignupValues>;
@@ -88,7 +89,7 @@ function logo(): string {
   return `<div class="logo" role="img" aria-label="Pixii.ai">${PIXII_LOGO_SVG}</div>`;
 }
 
-function documentShell(title: string, content: string, bodyClass = ""): string {
+export function documentShell(title: string, content: string, bodyClass = ""): string {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${escapeHtml(title)}</title><style>${STYLES}${bodyClass.split(" ").includes("app-theme") ? APP_THEME_STYLES : ""}${bodyClass.split(" ").includes("flyby-ad") ? CONNECTING_STYLES : ""}</style></head>
 <body class="${escapeHtml(bodyClass)}"><main>${content}</main></body></html>`;
@@ -145,7 +146,7 @@ function renderSignupCard(input: SignupPageInput, mode: SignupMode): string {
     : `<form id="signup-form" method="post" action="${mode === "public" ? "/" : mode === "team-test" ? "/preview/test" : "/router/fas/submit"}" novalidate>
 <input type="hidden" name="state" value="${escapeHtml(input.formState)}">
 <input type="hidden" name="fas" value="${escapeHtml(input.fas ?? "")}">
-<input type="hidden" name="iv" value="${escapeHtml(input.iv ?? "")}">`;
+<input type="hidden" name="iv" value="${escapeHtml(input.iv ?? "")}">${input.analyticsContext ? `<input type="hidden" name="analyticsContext" value="${escapeHtml(input.analyticsContext)}">` : ""}`;
   const button = mode === "preview"
     ? `<button type="button">Connect to Wi-Fi</button>`
     : `<button id="connect-button" type="submit">Connect to Wi-Fi</button>`;
@@ -166,6 +167,7 @@ ${button}
 <p class="links"><a href="${PRIVACY_URL}">Privacy Policy</a><span aria-hidden="true">·</span><a href="/notice">Notice of Collection</a></p>
 ${containerEnd}
 ${phoneBehaviorScript()}
+${input.analyticsContext ? `<script>window.pixiiTracking={context:${safeScriptJson(input.analyticsContext)},page:"form"};</script><script src="/assets/analytics-v1.js" defer></script>` : ""}
 </section>`;
 }
 
@@ -190,7 +192,7 @@ function safeScriptJson(value: string): string {
 export function renderWaitingPage(registrationId: string, statusToken: string, requiresGate = true): string {
   const endpoint = `/router/fas/status/${encodeURIComponent(registrationId)}?token=${encodeURIComponent(statusToken)}`;
   if (requiresGate) {
-    const content = `${flybyContent()}<noscript><p class="flyby-noscript">Please enable JavaScript, then refresh this page to finish connecting.</p></noscript><script>const endpoint=${safeScriptJson(endpoint)};window.pixiiAd={endpoint,registrationId:${safeScriptJson(registrationId)},token:${safeScriptJson(statusToken)},connectedHtml:${safeScriptJson(connectedContent())},preview:false};</script><script src="/assets/connected-v3.js" defer></script><script src="/assets/flybyjing/v1/experience-v6.js" defer></script>`;
+    const content = `${flybyContent()}<noscript><p class="flyby-noscript">Please enable JavaScript, then refresh this page to finish connecting.</p></noscript><script>const endpoint=${safeScriptJson(endpoint)};window.pixiiAd={endpoint,registrationId:${safeScriptJson(registrationId)},token:${safeScriptJson(statusToken)},connectedHtml:${safeScriptJson(connectedContent())},preview:false};</script><script src="/assets/connected-v3.js" defer></script><script src="/assets/flybyjing/v1/experience-v7.js" defer></script>`;
     return documentShell("Connecting | Pixii", content, "app-theme flyby-ad");
   }
   const content = `${connectingContent()}<noscript><p>JavaScript is off. Wait a moment, then refresh this page to check your connection.</p></noscript>
@@ -207,9 +209,9 @@ function connectingContent(): string {
   return `<section class="card connecting-ad"><p class="connection-state" id="status-message"><span class="status-dot" aria-hidden="true"></span>Connecting you to the Wi-Fi</p><div class="ad-story">${sponsor("AI that designs Amazon listings and ads")}<p class="proof"><span class="proof-input">One product photo.</span><span class="proof-output">Seven editable visuals.</span></p><figure class="showcase-listings"><img src="/assets/dr-squatch-complete-listing.webp" width="1800" height="900" alt="Complete Dr. Squatch example: one product photo, seven Amazon listing images, a video preview, Premium A+ content, and Mobile A+ content created with Pixii." decoding="async" fetchpriority="high"></figure></div></section>`;
 }
 
-export function connectedContent(): string {
+export function connectedContent(destination = PIXII_CTA_URL): string {
   // CircleCheck and ArrowRight paths from lucide-react (ISC), matching the app's 1.5px icons.
-  return `<section class="card status online"><h2 class="connection-state" tabindex="-1" aria-describedby="redirect-note"><svg class="status-dot is-connected" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>You’re online</h2><h1>Now try it on your product.</h1><p class="online-subtitle">Let Pixii do the design.</p><div class="online-action"><a class="arrow-cta" href="${PIXII_CTA_URL}" target="_blank" rel="noopener noreferrer" aria-describedby="redirect-note"><span class="cta-copy">Design my listing<span class="browser-action" id="browser-action">Open in your browser</span></span><svg class="cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a><p class="cta-note">Free, no credit card needed.</p><p class="redirect-note" id="redirect-note">Opening Pixii in <span id="redirect-seconds">5</span> seconds...</p><div class="cta-progress" role="progressbar" aria-label="Opening Pixii" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span aria-hidden="true"></span></div><div class="browser-fallback" id="browser-fallback" hidden><a id="open-here" href="${PIXII_CTA_URL}">Open Pixii here</a><button type="button" id="copy-pixii-link">Copy link</button><p id="copy-status" role="status"></p><input id="pixii-link" type="text" readonly aria-label="Pixii website link" hidden></div></div></section>`;
+  return `<section class="card status online"><h2 class="connection-state" tabindex="-1" aria-describedby="redirect-note"><svg class="status-dot is-connected" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>You’re online</h2><h1>Now try it on your product.</h1><p class="online-subtitle">Let Pixii do the design.</p><div class="online-action"><a class="arrow-cta" href="${escapeHtml(destination)}" target="_blank" rel="noopener noreferrer" aria-describedby="redirect-note"><span class="cta-copy">Design my listing<span class="browser-action" id="browser-action">Open in your browser</span></span><svg class="cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a><p class="cta-note">Free, no credit card needed.</p><p class="redirect-note" id="redirect-note">Opening Pixii in <span id="redirect-seconds">5</span> seconds...</p><div class="cta-progress" role="progressbar" aria-label="Opening Pixii" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span aria-hidden="true"></span></div><div class="browser-fallback" id="browser-fallback" hidden><a id="open-here" href="${escapeHtml(destination)}">Open Pixii here</a><button type="button" id="copy-pixii-link">Copy link</button><p id="copy-status" role="status"></p><input id="pixii-link" type="text" readonly aria-label="Pixii website link" hidden></div></div></section>`;
 }
 
 export function renderConnectedPage(): string {
@@ -242,6 +244,6 @@ export function renderDeniedPage(reference?: string): string {
 }
 
 export function renderNoticePage(): string {
-  const content = `<article class="card notice">${logo()}<p class="eyebrow">Event Wi-Fi</p><h1>Notice at Collection</h1><h2>What we collect</h2><p>We collect your name, work email, and phone number.</p><h2>Why we collect it</h2><p>We use this information to provide Wi-Fi access and send Pixii marketing communications that you agreed to receive.</p><h2>How long we keep it</h2><p>We retain this event registration for 365 days.</p><p>Read the full <a href="${PRIVACY_URL}">Pixii Privacy Policy</a>.</p><p class="fine">Wi-Fi powered by Pixii</p></article>`;
+  const content = `<article class="card notice">${logo()}<p class="eyebrow">Event Wi-Fi</p><h1>Notice at Collection</h1><h2>What we collect</h2><p>We collect your name, work email, and phone number.</p><h2>Why we collect it</h2><p>We use this information to provide Wi-Fi access and send Pixii marketing communications that you agreed to receive.</p><h2>Analytics and advertising</h2><p>When permitted, we measure this Wi-Fi journey using random references in PostHog. After connection, enabled Meta, Google, LinkedIn and RB2B integrations may collect device and browsing information for measurement and advertising. We do not send your form details or router credentials in these analytics events. Agreeing to marketing messages is not permission for all tracking. We honor Global Privacy Control and recorded tracking opt-outs; where required permission is unavailable, advertising trackers stay off.</p><h2>How long we keep it</h2><p>We retain this event registration for 365 days. Local analytics delivery records are kept for up to 30 days and handoff tokens expire after 10 minutes. Vendor retention follows the settings and policies described in our Privacy Policy.</p><p>Read the full <a href="${PRIVACY_URL}">Pixii Privacy Policy</a>.</p><p class="fine">Wi-Fi powered by Pixii</p></article>`;
   return documentShell("Notice at Collection | Pixii", content);
 }

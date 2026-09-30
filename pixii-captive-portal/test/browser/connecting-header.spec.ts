@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 for (const viewport of [{ width: 320, height: 700 }, { width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
   test(`connecting status stays aligned above the headline at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto("http://127.0.0.1:8787/preview/connecting");
+    await page.goto(`http://127.0.0.1:${process.env.PIXII_BROWSER_PORT || "8787"}/preview/connecting`);
     const status = page.locator("#status-message");
     await expect(status).toHaveText("Connecting");
     await expect(page.locator("#ad-progress")).not.toHaveAttribute("aria-valuenow", "0");

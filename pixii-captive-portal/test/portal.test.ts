@@ -114,7 +114,7 @@ describe("portal result pages", () => {
     expect(html).toContain('class="arrow-cta"');
     expect(html).toContain("Design my listing");
     expect(html).toContain('class="status-dot is-connected"');
-    expect(html).toContain(ctaUrl);
+    expect(html.replaceAll("&amp;", "&")).toContain(ctaUrl);
   });
 
   it("renders a generic denial without echoing a supplied reason", () => {

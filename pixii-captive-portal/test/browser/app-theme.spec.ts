@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const base = "http://127.0.0.1:8787";
+const base = `http://127.0.0.1:${process.env.PIXII_BROWSER_PORT || "8787"}`;
 
 test("signup uses the app fonts and one capsule phone field without changing validation", async ({ page }) => {
   await page.goto(base + "/");

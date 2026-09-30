@@ -11,6 +11,7 @@ import {
   renderPreviewPage
 } from "./portal";
 import { handlePublicSignup, handleTeamTest, handleTeamTestData } from "./team-preview";
+import { handleAnalyticsEvent, handleConnected, handleRedeem } from "./tracking-http";
 
 const CONTENT_SECURITY_POLICY = [
   "default-src 'none'",
@@ -43,6 +44,9 @@ const SHOWCASE_ASSETS: Readonly<Record<string, ArrayBuffer>> = {
 };
 
 const ROUTES: readonly Route[] = [
+  { path: "/analytics/events", methods: ["POST"] },
+  { path: "/connected", methods: ["GET"] },
+  { path: "/attribution/redeem", methods: ["POST", "OPTIONS"] },
   { path: "/", methods: ["GET", "POST"] },
   { path: "/router/bootstrap", methods: ["POST"] },
   { path: "/router/fas", methods: ["GET", "POST"] },
@@ -127,7 +131,7 @@ export async function routeRequest(
 ): Promise<Response> {
   const { pathname } = new URL(request.url);
   // Explicit dispatch also works when wifi.pixii.ai calls this Worker through its Pages service binding.
-  if (pathname.startsWith("/assets/flybyjing/v1/") || pathname.startsWith("/assets/bloom/v1/") || pathname.startsWith("/assets/app-theme/v1/") || pathname === "/assets/connected-v1.js" || pathname === "/assets/connected-v2.js" || pathname === "/assets/connected-v3.js") {
+  if (pathname.startsWith("/assets/flybyjing/v1/") || pathname.startsWith("/assets/bloom/v1/") || pathname.startsWith("/assets/app-theme/v1/") || pathname === "/assets/connected-v1.js" || pathname === "/assets/connected-v2.js" || pathname === "/assets/connected-v3.js" || pathname === "/assets/connected-v4.js" || pathname === "/assets/analytics-v1.js") {
     if (request.method !== "GET" && request.method !== "HEAD") return plainResponse("Method not allowed", 405, { Allow: "GET, HEAD" });
     const asset = await _env.ASSETS.fetch(request);
     const headers = new Headers(asset.headers);
@@ -147,8 +151,11 @@ export async function routeRequest(
   }
 
   if (pathname === "/") {
-    return handlePublicSignup(request, _env);
+    return handlePublicSignup(request, _env, _ctx);
   }
+  if (pathname === "/analytics/events") return handleAnalyticsEvent(request, _env, _ctx);
+  if (pathname === "/connected") return handleConnected(request, _env);
+  if (pathname === "/attribution/redeem") return handleRedeem(request, _env);
   if (pathname === "/health") {
     return healthResponse(_env);
   }
@@ -172,8 +179,8 @@ export async function routeRequest(
     request.method === "POST"
   ) {
     return pathname === "/router/fas"
-      ? handleAuthmon(request, _env)
-      : handleFasSubmit(request, _env);
+      ? handleAuthmon(request, _env, _ctx)
+      : handleFasSubmit(request, _env, _ctx);
   }
   if (/^\/router\/fas\/status\/[^/]+$/u.test(pathname) && request.method === "GET") {
     return handleFasStatus(request, _env);

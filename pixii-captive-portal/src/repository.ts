@@ -20,6 +20,7 @@ export interface RegistrationInsert {
   formIdempotencyKey: string;
   submissionSource: SubmissionSource;
   requiresAdGate?: boolean;
+  analyticsVisitId?: string | null;
 }
 
 export interface AdGateRow {
@@ -328,12 +329,12 @@ export class D1Repository {
         statements.push(
           this.db.prepare(
             `UPDATE auth_queue
-             SET state = 'acknowledged', acknowledged_at = ?
+             SET state = 'acknowledged', acknowledged_at = ?, analytics_ack_at = ?
              WHERE rhid = ? AND gateway_hash = ? AND state IN ('pending', 'delivered')
                AND expires_at > ? AND COALESCE(available_at, created_at) <= ?
                AND EXISTS (SELECT 1 FROM registrations r WHERE r.id = auth_queue.registration_id
                  AND (r.ad_gate_required = 0 OR r.ad_completed_at IS NOT NULL))`
-          ).bind(input.now, rhid, input.gatewayHash, input.now, input.now),
+          ).bind(input.now, input.now, rhid, input.gatewayHash, input.now, input.now),
           this.db.prepare(
             `UPDATE registrations SET authorization_status = 'acknowledged'
              WHERE id = (
@@ -493,8 +494,8 @@ export class D1Repository {
       `INSERT INTO registrations (
         id, event_id, router_id, full_name, email, email_normalized, phone_country, phone_e164,
         consent_email_marketing, consent_version, consent_text, consented_at,
-        created_at, authorization_status, form_idempotency_key, submission_source, ad_gate_required
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        created_at, authorization_status, form_idempotency_key, submission_source, ad_gate_required, analytics_visit_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       registration.id,
       registration.eventId,
@@ -512,7 +513,8 @@ export class D1Repository {
       registration.authorizationStatus,
       registration.formIdempotencyKey,
       registration.submissionSource,
-      registration.requiresAdGate ? 1 : 0
+      registration.requiresAdGate ? 1 : 0,
+      registration.analyticsVisitId ?? null
     );
 
     const authorizationStatement = this.db.prepare(
@@ -550,8 +552,8 @@ export class D1Repository {
       `INSERT INTO registrations (
         id, event_id, router_id, full_name, email, email_normalized, phone_country, phone_e164,
         consent_email_marketing, consent_version, consent_text, consented_at,
-        created_at, authorization_status, form_idempotency_key, submission_source, ad_gate_required
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        created_at, authorization_status, form_idempotency_key, submission_source, ad_gate_required, analytics_visit_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       registration.id,
       registration.eventId,
@@ -569,7 +571,8 @@ export class D1Repository {
       registration.authorizationStatus,
       registration.formIdempotencyKey,
       registration.submissionSource,
-      registration.requiresAdGate ? 1 : 0
+      registration.requiresAdGate ? 1 : 0,
+      registration.analyticsVisitId ?? null
     ).run();
   }
 
