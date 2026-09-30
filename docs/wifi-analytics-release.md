@@ -1,6 +1,6 @@
 # Wi-Fi analytics: implementation and gated release
 
-Status: implemented locally; **not migrated, deployed or enabled in production**. No router reinstall or DNS change. Product frontend and backend are untouched. Marketing edits live in the isolated `codex/wifi-attribution` branch of `pixii-website` (base `d4633c3e2bc593003c0a4b487dc8d16898c6628e`). Wi-Fi changes are on `codex/wifi-analytics` (base `0a21877ac574860335ec954bf328bbadc554028b`).
+Status: **schema, Worker and marketing code deployed on 2026-09-30; analytics and advertising remain disabled** pending privacy approval and integration verification. See [the production release record](releases/2026-09-30-analytics.md) for exact versions and rollback points. No router reinstall or DNS change. Product frontend and backend are untouched. Marketing edits were rebased onto the latest homepage and merged through [PR 150](https://github.com/pixii-technology/pixii-website/pull/150). Wi-Fi changes are on `codex/wifi-analytics` (base `0a21877ac574860335ec954bf328bbadc554028b`).
 
 ## What is measured
 
@@ -24,10 +24,10 @@ The query was executed successfully against the current schema and is empty unti
 
 | Integration | Existing identifier | Release condition |
 |---|---|---|
-| PostHog | project 149831, US ingestion | Supply existing project ingestion token securely as `POSTHOG_PROJECT_TOKEN`; reconcile one approved production test against D1. Never use a personal API key for ingestion. |
+| PostHog | project 149831, US ingestion | Existing project ingestion token is configured securely as `POSTHOG_PROJECT_TOKEN`. Privacy approval, activation and reconciliation of one approved production test against D1 remain pending. Never use a personal API key for ingestion. |
 | Meta | `571544668799364` | Verify account ownership, privacy eligibility and Events Manager receipt. Automatic configuration disabled in portal code. |
 | Google | GA4 `G-FRVEG530RV`, `G-E1JECZVBRZ`; Ads `AW-18294844879` | Tag Assistant/GA4 receipt; inspect GTM `GTM-K97PHX6H` for duplicate direct tags and automatic outbound-click collection. No new GTM migration. |
-| LinkedIn | **Missing** | Obtain actual partner ID from Campaign Manager; set `LINKEDIN_PARTNER_ID`, verify receipt. |
+| LinkedIn | **Excluded for now** | Disabled at the user's request. No partner ID has been invented or configured. |
 | RB2B | `GOYPYH4421OX` | Verify `wifi.pixii.ai` is authorized and inspect runtime network dependencies. Add only verified collector origins to clean-page CSP. Current loader allowlist alone is not a verified working integration. |
 
 All switches ship false: `ANALYTICS_ENABLED`, `PRIVACY_US_REVIEWED`, `PIXELS_ENABLED`, `META_ENABLED`, `GOOGLE_ENABLED`, `LINKEDIN_ENABLED`, `RB2B_ENABLED`, `RB2B_DOMAIN_VERIFIED`. `ANALYTICS_ROLLOUT_AT` is empty. Unknown/non-US locations and GPC/recorded opt-outs suppress tracking. US permission requires explicit privacy review; the marketing-message checkbox is **not** blanket tracking consent. No additional consent UI was introduced.
