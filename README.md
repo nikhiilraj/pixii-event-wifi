@@ -2,7 +2,7 @@
 
 Source for the live portal at **https://wifi.pixii.ai**. Start with [Monte's guide](MONTE.md).
 
-This private repository contains the Cloudflare portal, optimized artwork/video, local tests, database migrations, and the Pages domain gateway. It does **not** contain lead records, production credentials, database exports, or router installation packages.
+This public repository contains the Cloudflare portal, optimized artwork/video, local tests, database migrations, and the Pages domain gateway. It does **not** contain lead records, production credentials, database exports, or router installation packages.
 
 ## Architecture
 

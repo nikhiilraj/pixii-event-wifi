@@ -2,7 +2,7 @@
 
 final result: passed
 
-Scope: implementation candidate only. No production deployment has happened.
+Scope: approved B implementation, published on 2026-09-30 as Worker version `f71c1ffa-ef44-4e6e-9d07-bfc114ce5dd2`. Live previews were inspected after release; see `pixii-captive-portal/docs/2026-09-30-app-theme.md` for verification and rollback details.
 
 ## Source and comparison
 

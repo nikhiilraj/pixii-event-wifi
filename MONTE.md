@@ -1,8 +1,8 @@
 # Monte: making changes to the Wi-Fi pages
 
-You need **two separate permissions**: collaborator access to this private GitHub repo, and permission to edit/deploy Workers in the existing Cloudflare account. Cloudflare access does not automatically grant GitHub access.
+Anyone can read or clone this public repository. To publish changes you need **two separate permissions**: GitHub write access (or an approved pull request), and permission to edit/deploy Workers in the existing Cloudflare account. Cloudflare access does not automatically grant GitHub write access.
 
-1. Accept the GitHub invitation, clone/download this repository, and open the whole folder in Codex.
+1. Clone/download this repository and open the whole folder in Codex. Accept the collaborator invitation if you need to push changes directly.
 2. Tell Codex the exact text or design change you want. Use the prompt below.
 3. Review its local preview. Once happy, ask it to publish to the existing Worker.
 4. Check https://wifi.pixii.ai/preview/connecting. No router reinstall is needed for page changes.
