@@ -1,6 +1,6 @@
 # Wi-Fi analytics: implementation and gated release
 
-Status: **schema, Worker and marketing code deployed on 2026-09-30; analytics and advertising remain disabled** pending privacy approval and integration verification. See [the production release record](releases/2026-09-30-analytics.md) for exact versions and rollback points. No router reinstall or DNS change. Product frontend and backend are untouched. Marketing edits were rebased onto the latest homepage and merged through [PR 150](https://github.com/pixii-technology/pixii-website/pull/150). Wi-Fi changes are on `codex/wifi-analytics` (base `0a21877ac574860335ec954bf328bbadc554028b`).
+Status: **first-party analytics enabled on 2026-09-30; Meta and Google activation approved and browser-verified; RB2B remains disabled after a 403 loader error.** See [the production release record](releases/2026-09-30-analytics.md) for activation deployment status, versions and rollback points. No router reinstall or DNS change. Product frontend and backend are untouched. Marketing edits were rebased onto the latest homepage and merged through [PR 150](https://github.com/pixii-technology/pixii-website/pull/150). Wi-Fi changes are on `codex/wifi-analytics` (base `0a21877ac574860335ec954bf328bbadc554028b`).
 
 ## What is measured
 
@@ -24,13 +24,13 @@ The query was executed successfully against the current schema and is empty unti
 
 | Integration | Existing identifier | Release condition |
 |---|---|---|
-| PostHog | project 149831, US ingestion | Existing project ingestion token is configured securely as `POSTHOG_PROJECT_TOKEN`. Privacy approval, activation and reconciliation of one approved production test against D1 remain pending. Never use a personal API key for ingestion. |
-| Meta | `571544668799364` | Verify account ownership, privacy eligibility and Events Manager receipt. Automatic configuration disabled in portal code. |
-| Google | GA4 `G-FRVEG530RV`, `G-E1JECZVBRZ`; Ads `AW-18294844879` | Tag Assistant/GA4 receipt; inspect GTM `GTM-K97PHX6H` for duplicate direct tags and automatic outbound-click collection. No new GTM migration. |
+| PostHog | project 149831, US ingestion | Enabled with the existing secure ingestion token. Four separately labeled QA events confirmed with stable-ID deduplication. All 13 delivered live event IDs matched D1, including 3 signed router acknowledgements; one website arrival also observed. |
+| Meta | `571544668799364` | Enabled after user prerequisite confirmation and visible-browser request verification. Account receipt not independently reverified in this session. Automatic configuration disabled in portal code. |
+| Google | GA4 `G-FRVEG530RV`, `G-E1JECZVBRZ`; Ads `AW-18294844879` | Enabled after user prerequisite confirmation and browser event/CSP/payload checks. Account receipt not independently reverified in this session. Portal uses direct tags, no GTM migration. |
 | LinkedIn | **Excluded for now** | Disabled at the user's request. No partner ID has been invented or configured. |
-| RB2B | `GOYPYH4421OX` | Verify `wifi.pixii.ai` is authorized and inspect runtime network dependencies. Add only verified collector origins to clean-page CSP. Current loader allowlist alone is not a verified working integration. |
+| RB2B | `GOYPYH4421OX` | Disabled: configured loader returns 403. Dashboard is signed out; resolve loader/domain authorization and verify receipt before enabling. |
 
-All switches ship false: `ANALYTICS_ENABLED`, `PRIVACY_US_REVIEWED`, `PIXELS_ENABLED`, `META_ENABLED`, `GOOGLE_ENABLED`, `LINKEDIN_ENABLED`, `RB2B_ENABLED`, `RB2B_DOMAIN_VERIFIED`. `ANALYTICS_ROLLOUT_AT` is empty. Unknown/non-US locations and GPC/recorded opt-outs suppress tracking. US permission requires explicit privacy review; the marketing-message checkbox is **not** blanket tracking consent. No additional consent UI was introduced.
+Activation configuration: `ANALYTICS_ENABLED`, `PRIVACY_US_REVIEWED`, `PIXELS_ENABLED`, `META_ENABLED`, `GOOGLE_ENABLED` true; LinkedIn and both RB2B flags false. `ANALYTICS_ROLLOUT_AT=2026-09-30T16:41:11.000Z`. Unknown/non-US locations and GPC/recorded opt-outs suppress tracking. User confirmed privacy review; the marketing-message checkbox is **not** blanket tracking consent. No additional consent UI was introduced.
 
 For each enabled vendor, check browser requests **and** dashboard receipt, with GPC off/on, storage denied and opt-out set. Inspect payloads for URL fragments, handoff tokens, form values and router identifiers. Disable automatic/enhanced outbound-link collection that could capture a handoff URL; do not enable the integration without proving this. The scoped CSP is intentionally restrictive, not a wildcard vendor allowlist.
 
@@ -52,4 +52,6 @@ Outbox deliveries use stable UUIDs/original timestamps; non-2xx/timeout failures
 
 ## Validation limitations
 
-Verified: 281 Worker tests, 8 issuer/runtime tests, 90 browser checks, 2 gateway tests and 51 targeted website unit tests pass. Worker typecheck/generated types and tracking-disabled dry-run build pass. Website production build passed on retry (176 pages) after space became available; the earlier ENOSPC attempt is superseded. Its full `pnpm test --run` still collects four pre-existing Playwright suites incorrectly; `pnpm check` still reports the existing `src/data/events.ts:132` tuple error. Vendor account receipt and physical-device tests remain outstanding.
+Activation adds one regression test: 282 Worker tests and 8 issuer/runtime tests pass, as do typecheck/generated types and the enabled-config dry run. Full browser regression results are recorded in the release note. Earlier release passed 90 browser, 2 gateway and 51 targeted website tests. Website production build passed on retry (176 pages); its unrelated full-suite collection and `src/data/events.ts:132` tuple errors remain outside this change. Vendor dashboard receipt and physical-device tests remain outstanding.
+
+Repeat isolated checks: `node scripts/verify-analytics-activation.mjs`; add `--vendor-dry-run --headed` for actual vendor scripts with intercepted collector requests, `--click` for the click/fallback path, or `--send-qa` to send only the separate QA event name to the existing PostHog project. Never describe these as a real router test or confirmed advertising-platform receipt.

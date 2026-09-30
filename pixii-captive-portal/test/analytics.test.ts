@@ -5,7 +5,16 @@ import type { Env } from "../src/types";
 import { createVisit, enqueueEvent, flushOutbox, reconcileAnalytics, trackingAllowed } from "../src/analytics";
 import vector from "./fixtures/opennds-level3-v10.3.json";
 import { signContext } from "../src/analytics";
-import { issueHandoff, cleanFinalResponse } from "../src/tracking-http";
+import { issueHandoff, cleanFinalResponse, hasSafePixelReferrer } from "../src/tracking-http";
+
+it("never enables vendors when a legacy session URL survives as the clean document referrer", () => {
+  for (const referrer of ["", "https://wifi.pixii.ai/", "https://wifi.pixii.ai/connected"]) {
+    expect(hasSafePixelReferrer(new Request("https://wifi.pixii.ai/connected", {headers:{Referer:referrer}}))).toBe(true);
+  }
+  for (const referrer of ["https://wifi.pixii.ai/router/fas/wait/id?token=synthetic", "https://wifi.pixii.ai/connected?token=synthetic", "https://other.example/", "invalid"]) {
+    expect(hasSafePixelReferrer(new Request("https://wifi.pixii.ai/connected", {headers:{Referer:referrer}}))).toBe(false);
+  }
+});
 
 const origin = "https://wifi.pixii.ai";
 const appEnv = { ...env, ANALYTICS_ENABLED: "true", ANALYTICS_ROLLOUT_AT: "2026-09-30T00:00:00.000Z", PRIVACY_US_REVIEWED: "true" } as Env;

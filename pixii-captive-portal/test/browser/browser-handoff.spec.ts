@@ -45,7 +45,10 @@ for (const platform of platforms) {
     const context = await browser.newContext({ userAgent: platform.ua });
     await context.route("https://www.pixii.ai/**", route => route.fulfill({ body: "Pixii destination" }));
     const page = await context.newPage();
-    await page.clock.install();
+    // Keep host scheduling / assertions from consuming the final 100ms margin.
+    const clockStart = Date.now();
+    await page.clock.install({ time: clockStart });
+    await page.clock.pauseAt(clockStart + 1000);
     await page.goto(base + "/preview/connected");
     await page.clock.runFor(4900);
     await expect(page).toHaveURL(base + "/preview/connected");

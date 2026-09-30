@@ -244,7 +244,7 @@ export async function handleFasSubmit(request: Request, env: Env, ctx?: HandlerC
       env.FORM_SIGNING_KEY,
       Date.now() + (gate?.ad_gate_required === 1 ? CONNECTING_MINIMUM_MS : 6000)
     );
-    return secureHtml(renderWaitingPage(result.id, statusToken, gate?.ad_gate_required === 1), 202, { "Referrer-Policy": "same-origin" });
+    return secureHtml(renderWaitingPage(result.id, statusToken, gate?.ad_gate_required === 1), 202, { "Referrer-Policy": "origin" });
   } catch {
     return secureHtml(renderDeniedPage(), 503);
   }

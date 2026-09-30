@@ -1,6 +1,6 @@
 # Analytics production rollout — 2026-09-30
 
-User authorized deployment. LinkedIn remains excluded. Code and the additive schema are deployed; first-party analytics and all advertising switches remain off pending the privacy approval and vendor checks. No router reinstall or DNS change.
+User authorized deployment, then confirmed all prerequisites except physical-device testing and explicitly requested activation. LinkedIn remains excluded. First-party analytics was enabled at `2026-09-30T16:41:11.000Z`. Meta and Google activation is recorded below; RB2B remains disabled after its configured script returned HTTP 403. No router reinstall or DNS change.
 
 ## Preflight
 
@@ -21,7 +21,7 @@ If the Worker release fails, roll back code to the verified prior Worker version
 
 Website rollback uses the recorded prior Pages production deployment. Coordinate rollback with the Worker tracking switch. No router or DNS changes are included.
 
-## Release result
+## Initial tracking-disabled release result
 
 - Applied only `0006_analytics.sql` remotely. No historical enrollment or destructive schema changes.
 - Deployed tracking-disabled Worker version `e16601c1-bd3b-47f0-8de9-a5a5c1ffc8fd`, then securely supplied the existing PostHog ingestion key. Active Worker version after that secret update: `108bbada-a9c8-4fcd-8e8c-fff829a41846` (2026-09-30 16:20:50 UTC). Existing router/authentication secrets were preserved.
@@ -33,9 +33,21 @@ Website rollback uses the recorded prior Pages production deployment. Coordinate
 - Live marketing HTML confirms handoff removal bootstrap precedes GTM, global `gtag` remains available, and the unguarded GTM iframe is absent.
 - Live marketing browser check with a suppressed Wi-Fi handoff: fragment removed, homepage rendered, zero analytics/advertising requests, and temporary suppression did not create a permanent opt-out.
 
-## Remaining activation checks
+## Activation follow-up
 
-1. Obtain explicit approval of the existing privacy notice and US-only eligibility rule, then set an actual rollout timestamp and enable first-party analytics only.
-2. Reconcile a newly eligible router journey between D1 and PostHog. Do not upload old leads.
-3. Complete real iPhone and Android tests; browser emulation does not prove captive-browser behavior.
-4. Keep Meta, Google and RB2B disabled until each vendor's configuration, privacy eligibility, browser requests and dashboard receipt are verified. LinkedIn remains out of scope.
+- User confirmed the review/verification prerequisites and requested activation; no additional consent inference from the marketing checkbox was made.
+- First-party activation Worker: `6c3d4842-7bd5-41b2-9c43-fe73cc3460ae`. Rollout floor is the actual activation time, not historical enrollment.
+- The isolated signed-router browser run saved a synthetic signup in local D1, held authorization for 7,000 visible milliseconds, required the signed router ACK, emitted exactly four stable first-party event IDs, redeemed the website handoff once and rejected its replay. It is not a physical-router test.
+- Sent the four original serialized events under the separate `wifi_tracking_verification` QA name, `wifi_source=team_test`, `wifi_test=true`, and QA run `245f70da-067f-4c9f-b5ea-806fc10cd20e`. PostHog project 149831 confirmed all four with one row/UUID each despite two deliveries. These events are excluded from the production conversion query.
+- Real Meta/Google JavaScript was exercised in visible Chromium with collector requests intercepted. Meta emitted `PageView` and `WifiConnected`; both GA4 IDs and the Ads ID emitted `wifi_connected`. Both automatic and click/fallback paths are checked for private-data leakage. No vendor libraries or collectors load before signed acknowledgement.
+- Testing found a full session URL in `document.referrer`. Connecting responses now send only their origin as referrer. The clean page also suppresses pixels when an old/cached document supplies any unsafe referrer. Existing Wi-Fi flow and fallback remain usable. Added a regression test.
+- Added the exact observed Google collector origins and an image-only regional Google redirect dependency; no wildcard permission was added. Final checks require zero CSP violations and no form values, router-session references or handoff tokens in vendor requests.
+- Meta suppresses headless bot traffic; its events were verified using normal visible Chromium, without changing its bot rules.
+- RB2B public loader for `GOYPYH4421OX` returned 403. Its browser dashboard, Meta Events Manager and Google Analytics were signed out in the available browser. Account-side receipt has **not** been independently reverified here; the user's completion statement is not presented as our own dashboard evidence.
+- Live reconciliation (activation through 17:08 UTC): all 13 delivered D1 event IDs/names matched PostHog exactly: 4 form views, 3 saved signups, 3 signed router acknowledgements and 3 opening requests. PostHog separately received one `wifi_website_arrived` with `wifi_source=wifi`. These are live records, not the isolated QA event. This verifies real rollout delivery, not the OS/device models involved.
+- Physical iPhone/Android router tests remain outstanding. The test runner has an India network address (a Cloudflare browser check was Singapore); production US-only eligibility was not bypassed.
+- Final verification: typecheck, enabled-configuration dry run, 282 Worker tests, 8 issuer/runtime tests, 2 gateway tests and all 90 browser tests passed. A concurrent browser run first hit ten timing/timeout failures; five timing assertions reproduced in isolation because the mock clock still advanced during host work. Explicitly paused the two exact-timing fixtures without changing assertions or production timers; the fresh complete two-worker run passed 90/90 in 5.4 minutes.
+
+Activation deployment version: pending final release checks.
+
+Rollback for this activation: `108bbada-a9c8-4fcd-8e8c-fff829a41846` restores the tracking-disabled release; `6c3d4842-7bd5-41b2-9c43-fe73cc3460ae` preserves first-party tracking but has all pixels disabled. Keep additive schema and collected registrations.

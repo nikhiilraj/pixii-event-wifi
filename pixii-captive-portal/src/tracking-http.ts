@@ -85,6 +85,18 @@ export async function handleRedeem(request: Request, env: Env): Promise<Response
 
 function scriptJson(value: unknown): string { return JSON.stringify(value).replaceAll("<", "\\u003c"); }
 
+// Old connecting documents may still carry a full signed session URL as their
+// referrer. Keep their final screen working, but do not expose it to vendors.
+export function hasSafePixelReferrer(request: Request): boolean {
+  const value = request.headers.get("Referer");
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return url.origin === new URL(request.url).origin && !url.search && !url.hash
+      && (url.pathname === "/" || url.pathname === "/connected");
+  } catch { return false; }
+}
+
 export async function handleConnected(request: Request, env: Env): Promise<Response> {
   try {
     if (!analyticsEnabled(env)) throw new Error("disabled");
@@ -106,7 +118,7 @@ export async function handleConnected(request: Request, env: Env): Promise<Respo
         telemetry = await pageToken(visit, "connected", env);
       }
     } catch { /* Keep the ordinary website link even if analytics storage fails. */ }
-    const ads = !suppressed && session.submission_source === "wifi" && env.PIXELS_ENABLED === "true";
+    const ads = !suppressed && session.submission_source === "wifi" && env.PIXELS_ENABLED === "true" && hasSafePixelReferrer(request);
     const pixels = {
       meta: ads && env.META_ENABLED === "true" ? "571544668799364" : "",
       google: ads && env.GOOGLE_ENABLED === "true" ? ["G-FRVEG530RV", "G-E1JECZVBRZ", "AW-18294844879"] : [],
@@ -118,13 +130,16 @@ export async function handleConnected(request: Request, env: Env): Promise<Respo
     const response = secureHtml(body, 200, { "X-Pixii-Clean-Final": "1", "X-Robots-Tag": "noindex, nofollow" });
     const hosts = new Set<string>();
     if (pixels.meta) { hosts.add("https://connect.facebook.net"); hosts.add("https://www.facebook.com"); }
-    if (pixels.google.length) ["https://www.googletagmanager.com", "https://www.google-analytics.com", "https://region1.google-analytics.com", "https://www.google.com", "https://www.googleadservices.com", "https://googleads.g.doubleclick.net", "https://stats.g.doubleclick.net"].forEach(h => hosts.add(h));
+    if (pixels.google.length) ["https://www.googletagmanager.com", "https://www.google-analytics.com", "https://region1.google-analytics.com", "https://analytics.google.com", "https://www.google.com", "https://www.googleadservices.com", "https://googleads.g.doubleclick.net", "https://stats.g.doubleclick.net", "https://ad.doubleclick.net"].forEach(h => hosts.add(h));
     if (pixels.linkedin) ["https://snap.licdn.com", "https://px.ads.linkedin.com", "https://px4.ads.linkedin.com"].forEach(h => hosts.add(h));
     // RB2B remains gated until this exact dependency set is verified in its dashboard.
     if (pixels.rb2b) hosts.add("https://ddwl4m2hdecbv.cloudfront.net");
     if (hosts.size) {
       const allow = [...hosts].join(" ");
-      response.headers.set("Content-Security-Policy", `default-src 'none'; img-src 'self' ${allow}; media-src 'self'; font-src 'self'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline' ${allow}; connect-src 'self' ${allow}; frame-src ${allow}; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`);
+      // Verified regional image redirect during the India-based browser check.
+      // Do not grant the regional host script or connection permissions.
+      const imageAllow = pixels.google.length ? `${allow} https://www.google.co.in` : allow;
+      response.headers.set("Content-Security-Policy", `default-src 'none'; img-src 'self' ${imageAllow}; media-src 'self'; font-src 'self'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline' ${allow}; connect-src 'self' ${allow}; frame-src ${allow}; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`);
     }
     return response;
   } catch { return secureHtml(renderDeniedPage(), 403); }

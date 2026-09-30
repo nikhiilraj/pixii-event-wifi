@@ -57,7 +57,7 @@ Pre-optimized media is committed; the media-preparation scripts are optional uti
 
 ## Publishing an approved change
 
-**Analytics branch:** follow [the gated analytics release checklist](docs/wifi-analytics-release.md) first. This is not a UI-only release: additive migration `0006_analytics.sql` must precede the new Worker code even with tracking disabled. Production migration/deployment require explicit approval; vendor switches ship off.
+**Analytics:** follow [the release checklist and current activation state](docs/wifi-analytics-release.md) first. Additive migration `0006_analytics.sql` was applied before the analytics Worker release. Do not reapply or roll it back automatically. Production changes still require explicit approval; the checked-in flags now enable approved first-party, Meta and Google tracking, with LinkedIn and RB2B disabled.
 
 Run from `pixii-captive-portal/`, after pulling the latest code and passing tests:
 

@@ -36,7 +36,10 @@ test("connecting progress fills across seven visible seconds and labels match th
 
 test("connected neutral progress fills for five seconds then opens Pixii with attribution", async ({ page }, testInfo) => {
   await interceptDestination(page);
-  await page.clock.install();
+  // Screenshot and assertion wall time must not count as simulated visible time.
+  const clockStart = Date.now();
+  await page.clock.install({ time: clockStart });
+  await page.clock.pauseAt(clockStart + 1000);
   await page.goto(base + "/preview/connected");
   await expect(page.getByText("Free, no credit card needed.", { exact: true })).toBeVisible();
   await page.clock.runFor(2400);

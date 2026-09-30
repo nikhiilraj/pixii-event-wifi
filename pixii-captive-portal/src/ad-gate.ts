@@ -58,7 +58,7 @@ export async function handleWaitingPage(request: Request, env: Env): Promise<Res
       const status = await repository.readAuthorizationStatus(registrationId, new Date(Date.now()).toISOString());
       if (!status || status === "expired" || status === "failed") return secureHtml(renderDeniedPage(), 410);
       const gate = await repository.readAdGate(registrationId);
-      return secureHtml(renderWaitingPage(registrationId, tokens[0]!, gate?.ad_gate_required === 1), 200, { "Referrer-Policy": "same-origin" });
+      return secureHtml(renderWaitingPage(registrationId, tokens[0]!, gate?.ad_gate_required === 1), 200, { "Referrer-Policy": "origin" });
     } catch {
       return secureHtml(renderDeniedPage(), 503);
     }
