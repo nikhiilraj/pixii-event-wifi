@@ -13,7 +13,10 @@ test("signup uses the app fonts and one capsule phone field without changing val
   await expect(page.locator(".phone-control")).toHaveCSS("border-radius", "999px");
   await expect(page.locator("#phoneCountry")).toHaveCSS("border-right-width", "0px");
   await expect(page.locator("#phoneCountry")).toHaveCSS("background-image", /chevron-down\.svg/);
-  await expect(page.getByText("For Pixii updates and offers.", { exact: true })).toBeVisible();
+  await expect(page.getByText("For Pixii updates and offers.", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".required-marker")).toHaveCount(0);
+  await expect(page.locator("#phone")).toHaveAttribute("aria-describedby", "phone-error");
+  for (const link of ["Privacy Policy", "Notice of Collection"]) await expect(page.getByRole("link", { name: link, exact: true })).toHaveCSS("text-decoration-line", "none");
   await page.locator("#connect-button").click();
   await expect(page.locator("#fullName")).toBeFocused();
   for (const field of ["fullName", "email", "phone", "consent"]) await expect(page.locator("#" + field)).toHaveAttribute("aria-invalid", "true");
@@ -64,10 +67,10 @@ test("connected page groups the shorter action and neutral countdown without a s
   await expect(page.getByRole("heading", { name: "You’re online" })).toBeFocused();
   await expect(page.getByRole("heading", { name: "You’re online" })).toHaveAccessibleDescription("Opening Pixii in 5 seconds...");
   await expect(page.getByRole("heading", { name: "You’re online" })).toHaveCSS("outline-style", "none");
-  await expect(page.getByRole("heading", { name: "Now try it on your product." })).toBeVisible();
-  await expect(page.locator(".arrow-cta")).toHaveAccessibleName("Design my listing");
-  await expect(page.getByText("Let Pixii do the design.", { exact: true })).toBeVisible();
-  await expect(page.getByText("Free, no credit card needed.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Now try Pixii on your product", exact: true })).toBeVisible();
+  await expect(page.locator(".arrow-cta")).toHaveAccessibleName("Design my ads");
+  await expect(page.getByText("Design Amazon ads, videos, or listings, instantly", { exact: true })).toBeVisible();
+  await expect(page.getByText("Free. No credit card needed. Results in 2 minutes.", { exact: true })).toBeVisible();
   await expect(page.locator(".sponsor, .logo")).toHaveCount(0);
   const geometry = await page.evaluate(() => {
     const cta = document.querySelector(".arrow-cta")!;

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { renderWaitingPage } from "../../src/portal";
 
 const base = `http://127.0.0.1:${process.env.PIXII_BROWSER_PORT || "8787"}`;
-const destination = "https://www.pixii.ai/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
+const destination = "https://www.pixii.ai/ads/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
 async function hide(page: Page, hidden: boolean) {
   await page.evaluate(value => {
     Object.defineProperty(document, "visibilityState", { configurable: true, get: () => value ? "hidden" : "visible" });
@@ -41,7 +41,7 @@ test("connected neutral progress fills for five seconds then opens Pixii with at
   await page.clock.install({ time: clockStart });
   await page.clock.pauseAt(clockStart + 1000);
   await page.goto(base + "/preview/connected");
-  await expect(page.getByText("Free, no credit card needed.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Free. No credit card needed. Results in 2 minutes.", { exact: true })).toBeVisible();
   await page.clock.runFor(2400);
   await expect(page).toHaveURL(base + "/preview/connected");
   const progress = page.getByRole("progressbar", { name: "Opening Pixii" });

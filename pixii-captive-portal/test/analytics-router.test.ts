@@ -141,7 +141,7 @@ describe("analytics with real signed local Authmon flow", () => {
     expect(submitted.status).toBe(202);
     const waiting = await submitted.text();
     expect(waiting).toContain("Connecting");
-    expect(waiting.replaceAll("&amp;", "&")).toContain("https://www.pixii.ai/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026");
+    expect(waiting.replaceAll("&amp;", "&")).toContain("https://www.pixii.ai/ads/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026");
     const statusPath = waiting.match(/\/router\/fas\/status\/[^"?]+\?token=[^"<]+/u)?.[0];
     expect(statusPath).toBeTruthy();
 

@@ -4,7 +4,7 @@ import vector from "../fixtures/opennds-level3-v10.3.json" with { type: "json" }
 
 const baseUrl = `http://127.0.0.1:${process.env.PIXII_BROWSER_PORT || "8787"}`;
 const ctaUrl =
-  "https://www.pixii.ai/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
+  "https://www.pixii.ai/ads/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
 
 function portalUrl(fas = vector.fas): string {
   const url = new URL("/router/fas", baseUrl);
@@ -40,7 +40,7 @@ test("completes the live local Worker flow with the confirmed router null suffix
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect(page.locator(".signup-title")).toHaveText("Get free, fast Wi-Fi.");
   await expect(page.locator(".sponsor")).toContainText("Wi-Fi powered by");
-  await expect(page.locator(".required-marker")).toHaveCount(4);
+  await expect(page.locator(".required-marker")).toHaveCount(0);
   await expect(page.getByText("Required to connect.", { exact: true })).toHaveCount(0);
   await expect(page.locator(".showcase-listings img")).toHaveCount(0);
   await expect(page.locator(".showcase-aplus")).toHaveCount(0);

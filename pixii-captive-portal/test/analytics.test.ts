@@ -111,7 +111,7 @@ it("rejects clean final access before the ad gate, then renders identical final 
   const clean = await get("/connected", { Cookie: cookie });
   expect(clean.status).toBe(200);
   const html = await clean.text();
-  expect(html).toContain("Design my listing");
+  expect(html).toContain("Design my ads");
   expect(html).not.toContain(id!);
   expect(html).not.toMatch(/window.pixiiAd|registrationId|\/router\/fas\/status|\"token\":/);
   expect(html).not.toContain(vector.key);
