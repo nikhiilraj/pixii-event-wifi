@@ -48,6 +48,8 @@ Website rollback uses the recorded prior Pages production deployment. Coordinate
 - Physical iPhone/Android router tests remain outstanding. The test runner has an India network address (a Cloudflare browser check was Singapore); production US-only eligibility was not bypassed.
 - Final verification: typecheck, enabled-configuration dry run, 282 Worker tests, 8 issuer/runtime tests, 2 gateway tests and all 90 browser tests passed. A concurrent browser run first hit ten timing/timeout failures; five timing assertions reproduced in isolation because the mock clock still advanced during host work. Explicitly paused the two exact-timing fixtures without changing assertions or production timers; the fresh complete two-worker run passed 90/90 in 5.4 minutes.
 
-Activation deployment version: pending final release checks.
+Activation deployed successfully: Worker version `ca4b8e42-8f51-4f79-83fe-efaf74b02c7d`, source `97f3a2d`. Verified deployment output has first-party analytics, privacy review, Meta and Google enabled; LinkedIn and both RB2B flags remain false. Existing custom domain, service binding, secrets and both cron schedules were preserved.
+
+Post-deploy live smoke check passed on `https://wifi.pixii.ai`. All three previews return 200 with no advertising CSP permission or external vendor script tags. Unauthenticated `/connected` returns 403 and no vendor permission. Source is published in [Wi-Fi PR 2](https://github.com/nikhiilraj/pixii-event-wifi/pull/2).
 
 Rollback for this activation: `108bbada-a9c8-4fcd-8e8c-fff829a41846` restores the tracking-disabled release; `6c3d4842-7bd5-41b2-9c43-fe73cc3460ae` preserves first-party tracking but has all pixels disabled. Keep additive schema and collected registrations.

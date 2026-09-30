@@ -1,6 +1,6 @@
 # Wi-Fi analytics: implementation and gated release
 
-Status: **first-party analytics enabled on 2026-09-30; Meta and Google activation approved and browser-verified; RB2B remains disabled after a 403 loader error.** See [the production release record](releases/2026-09-30-analytics.md) for activation deployment status, versions and rollback points. No router reinstall or DNS change. Product frontend and backend are untouched. Marketing edits were rebased onto the latest homepage and merged through [PR 150](https://github.com/pixii-technology/pixii-website/pull/150). Wi-Fi changes are on `codex/wifi-analytics` (base `0a21877ac574860335ec954bf328bbadc554028b`).
+Status: **first-party analytics, Meta and Google are live as of 2026-09-30; RB2B remains disabled after a 403 loader error.** See [the production release record](releases/2026-09-30-analytics.md) for verification, versions and rollback points. No router reinstall or DNS change. Product frontend and backend are untouched. Marketing edits were rebased onto the latest homepage and merged through [PR 150](https://github.com/pixii-technology/pixii-website/pull/150). Wi-Fi changes are on `codex/wifi-analytics` (base `0a21877ac574860335ec954bf328bbadc554028b`), [PR 2](https://github.com/nikhiilraj/pixii-event-wifi/pull/2).
 
 ## What is measured
 
