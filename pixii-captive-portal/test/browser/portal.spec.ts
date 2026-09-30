@@ -38,8 +38,8 @@ test("completes the live local Worker flow with the confirmed router null suffix
   await page.goto(portalUrl(fas));
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  await expect(page.locator(".signup-title")).toHaveText("Connect to Fast Wi-Fi");
-  await expect(page.locator(".sponsor-copy")).toHaveText("the AI designer for Amazon ads and Listings");
+  await expect(page.locator(".signup-title")).toHaveText("Get free, fast Wi-Fi.");
+  await expect(page.locator(".sponsor")).toContainText("Wi-Fi powered by");
   await expect(page.locator(".required-marker")).toHaveCount(4);
   await expect(page.getByText("Required to connect.", { exact: true })).toHaveCount(0);
   await expect(page.locator(".showcase-listings img")).toHaveCount(0);
@@ -114,6 +114,7 @@ test("completes the live local Worker flow with the confirmed router null suffix
   expect(acknowledged.status()).toBe(200);
 
   await expect(page.getByRole("heading", { name: "You’re online" })).toBeVisible({ timeout: 8_000 });
+  await expect(page.getByRole("heading", { name: "You’re online" })).toBeFocused();
   expect(Date.now() - shownAt).toBeGreaterThanOrEqual(7_000);
   await expect(page.locator(".status-dot.is-connected")).toBeVisible();
   await expect(page.locator("#open-here")).toHaveAttribute("href", ctaUrl);
@@ -142,8 +143,8 @@ test("keeps the core message without JavaScript", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto(portalUrl());
-  await expect(page.locator(".signup-title")).toHaveText("Connect to Fast Wi-Fi");
-  await expect(page.locator(".sponsor-copy")).toHaveText("the AI designer for Amazon ads and Listings");
+  await expect(page.locator(".signup-title")).toHaveText("Get free, fast Wi-Fi.");
+  await expect(page.locator(".sponsor")).toContainText("Wi-Fi powered by");
   await expect(page.locator("#consent")).not.toBeChecked();
   await context.close();
 });

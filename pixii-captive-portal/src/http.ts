@@ -16,6 +16,7 @@ const CONTENT_SECURITY_POLICY = [
   "default-src 'none'",
   "img-src 'self'",
   "media-src 'self'",
+  "font-src 'self'",
   "style-src 'unsafe-inline'",
   "script-src 'self' 'unsafe-inline'",
   "connect-src 'self'",
@@ -126,7 +127,7 @@ export async function routeRequest(
 ): Promise<Response> {
   const { pathname } = new URL(request.url);
   // Explicit dispatch also works when wifi.pixii.ai calls this Worker through its Pages service binding.
-  if (pathname.startsWith("/assets/flybyjing/v1/") || pathname.startsWith("/assets/bloom/v1/") || pathname === "/assets/connected-v1.js" || pathname === "/assets/connected-v2.js") {
+  if (pathname.startsWith("/assets/flybyjing/v1/") || pathname.startsWith("/assets/bloom/v1/") || pathname.startsWith("/assets/app-theme/v1/") || pathname === "/assets/connected-v1.js" || pathname === "/assets/connected-v2.js" || pathname === "/assets/connected-v3.js") {
     if (request.method !== "GET" && request.method !== "HEAD") return plainResponse("Method not allowed", 405, { Allow: "GET, HEAD" });
     const asset = await _env.ASSETS.fetch(request);
     const headers = new Headers(asset.headers);

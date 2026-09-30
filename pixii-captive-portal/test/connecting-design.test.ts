@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { connectingContent } from "../src/connecting";
 
-describe("approved orange masthead design", () => {
+describe("approved app-theme showcase", () => {
   it("promotes the product photo while retaining the other six listings once each", () => {
-    const html = connectingContent("<span>Pixii.ai</span>");
+    const html = connectingContent();
     const listings = html.match(/<section[^>]*data-scene="listings"[\s\S]*?<\/section>/)?.[0] ?? "";
     const sources = [...listings.matchAll(/<img[^>]* src="([^"]+)"/g)].map(match => match[1]);
     expect(sources).toEqual([
@@ -18,7 +18,7 @@ describe("approved orange masthead design", () => {
   });
 
   it("exposes one accessible progress bar and the complete artwork", () => {
-    const html = connectingContent("<span>Pixii.ai</span>");
+    const html = connectingContent();
     expect(html).toContain('role="progressbar" aria-label="Connecting to Wi-Fi"');
     expect(html).toContain('aria-valuenow="0" aria-valuetext="7 seconds remaining"');
     expect(html).not.toContain("<circle");

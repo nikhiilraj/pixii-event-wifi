@@ -10,8 +10,13 @@ describe("HTTP boundary", () => {
     for (const [path, type] of [
       ["/assets/connected-v1.js", "javascript"],
       ["/assets/connected-v2.js", "javascript"],
+      ["/assets/connected-v3.js", "javascript"],
       ["/assets/flybyjing/v1/experience-v4.js", "javascript"],
       ["/assets/flybyjing/v1/experience-v5.js", "javascript"],
+      ["/assets/flybyjing/v1/experience-v6.js", "javascript"],
+      ["/assets/app-theme/v1/CabinetGrotesk-Medium.woff2", "font/woff2"],
+      ["/assets/app-theme/v1/Switzer-Regular.woff2", "font/woff2"],
+      ["/assets/app-theme/v1/Switzer-Medium.woff2", "font/woff2"],
       ["/assets/bloom/v1/video-poster.webp", "image/webp"],
       ["/assets/bloom/v1/showcase.mp4", "video/mp4"]
     ]) {
@@ -119,8 +124,8 @@ describe("HTTP boundary", () => {
     expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8");
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     expect(html).toContain("Form preview");
-    expect(html.replace(/<[^>]*>/gu, "")).toContain("Fast Wi-Fi");
-    expect(html).toContain("the AI designer for Amazon ads and Listings");
+    expect(html.replace(/<[^>]*>/gu, "")).toContain("Get free, fast Wi-Fi.");
+    expect(html).toContain("Wi-Fi powered by");
     expect(html).toContain('name="fullName"');
     expect(html).toContain('name="consent"');
     expect(html).toContain('type="button"');

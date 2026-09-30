@@ -15,9 +15,8 @@ describe("signup portal", () => {
   it("keeps signup focused on connecting and shows product proof only after signup", () => {
     const html = renderSignupPage({ formState: "signed-state" });
     const hierarchy = [
-      "Connect to Fast Wi-Fi",
-      "Brought to you by",
-      "the AI designer for Amazon ads and Listings"
+      "Get free, fast Wi-Fi.",
+      "Wi-Fi powered by"
     ];
 
     for (const copy of hierarchy) expect(html.replace(/<[^>]*>/gu, "")).toContain(copy);
@@ -28,7 +27,7 @@ describe("signup portal", () => {
     const waiting = renderWaitingPage("registration-id", "status-token");
     expect(waiting).toContain('src="/assets/flybyjing/v1/listing-hero-product.webp"');
     expect(waiting).toContain("Fly By Jing Sichuan Chili Crisp product photo");
-    expect(waiting).toContain('the AI designer for Amazon <strong id="ad-category">Listings</strong>');
+    expect(waiting).toContain('Pixii designs <strong id="ad-category">Listings</strong>');
     expect(html).toContain('name="state" value="signed-state"');
     expect(html).not.toContain("clientip=");
     expect(html).not.toContain("Pixii—the");
@@ -110,10 +109,10 @@ describe("signup portal", () => {
 describe("portal result pages", () => {
   it("renders the connected page and intentional Pixii CTA", () => {
     const html = renderConnectedPage();
-    expect(html).toContain("You’re online</h1>");
+    expect(html).toContain("You’re online</h2>");
     expect(html).not.toContain("Enjoy the fast Wi-Fi.");
     expect(html).toContain('class="arrow-cta"');
-    expect(html).toContain("Design an Amazon listing in 2 minutes.");
+    expect(html).toContain("Design my listing");
     expect(html).toContain('class="status-dot is-connected"');
     expect(html).toContain(ctaUrl);
   });

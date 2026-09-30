@@ -18,8 +18,10 @@ The router sends an encrypted openNDS handoff to `/router/fas`. Signup saves a r
 | --- | --- |
 | Connecting layout, artwork and CSS | `pixii-captive-portal/src/connecting.ts` |
 | Signup, connected page and shared styles | `pixii-captive-portal/src/portal.ts` |
-| Connecting browser runtime | `pixii-captive-portal/public/assets/flybyjing/v1/experience-v5.js` |
-| Connected CTA and five-second redirect | `pixii-captive-portal/public/assets/connected-v2.js` |
+| App-default theme for the three guest screens | `pixii-captive-portal/src/app-theme.ts` |
+| Connecting browser runtime | `pixii-captive-portal/public/assets/flybyjing/v1/experience-v6.js` |
+| Connected CTA and five-second redirect | `pixii-captive-portal/public/assets/connected-v3.js` |
+| Same-origin app fonts and icons | `pixii-captive-portal/public/assets/app-theme/v1/` |
 | Images and video | `pixii-captive-portal/public/assets/` |
 | Routes and security headers | `pixii-captive-portal/src/http.ts` |
 | Router compatibility and auth | `pixii-captive-portal/src/opennds.ts`, `src/fas.ts` |
