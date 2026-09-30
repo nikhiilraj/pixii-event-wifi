@@ -1,5 +1,6 @@
 import { CONSENT_TEXT } from "./config";
 import { connectingContent as flybyContent, CONNECTING_STYLES } from "./connecting";
+import { APP_THEME_STYLES } from "./app-theme";
 import examples from "libphonenumber-js/examples.mobile.json";
 import {
   getCountries,
@@ -89,7 +90,7 @@ function logo(): string {
 
 function documentShell(title: string, content: string, bodyClass = ""): string {
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${escapeHtml(title)}</title><style>${STYLES}${bodyClass === "flyby-ad" ? CONNECTING_STYLES : ""}</style></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${escapeHtml(title)}</title><style>${STYLES}${bodyClass.split(" ").includes("app-theme") ? APP_THEME_STYLES : ""}${bodyClass.split(" ").includes("flyby-ad") ? CONNECTING_STYLES : ""}</style></head>
 <body class="${escapeHtml(bodyClass)}"><main>${content}</main></body></html>`;
 }
 
@@ -99,7 +100,7 @@ function fieldError(errors: Record<string, string>, field: string): string {
 }
 
 function inputAttributes(errors: Record<string, string>, field: string): string {
-  return ` aria-describedby="${field}-error"${errors[field] ? ` aria-invalid="true"` : ""}`;
+  return ` aria-describedby="${field === "phone" ? "phone-help " : ""}${field}-error"${errors[field] ? ` aria-invalid="true"` : ""}`;
 }
 
 type SignupMode = "live" | "preview" | "team-test" | "public";
@@ -152,34 +153,34 @@ function renderSignupCard(input: SignupPageInput, mode: SignupMode): string {
 
   return `<section class="card">
 <header class="signup-header">
-<h1 class="signup-title">Connect to <span style="display:block;white-space:nowrap">Fast Wi-Fi</span></h1>
-${sponsor("the AI designer for Amazon ads and Listings")}
+<div class="sponsor"><span>Wi-Fi powered by</span>${logo()}</div>
+<h1 class="signup-title">Get free, fast Wi-Fi.</h1>
 </header>
 ${formError}
 ${containerStart}
 <label class="field" for="fullName"><span class="field-label">Full name<span class="required-marker" aria-hidden="true">*</span></span><input id="fullName" name="fullName" type="text" autocomplete="name" maxlength="100" required value="${escapeHtml(values.fullName ?? "")}"${inputAttributes(errors, "fullName")}>${fieldError(errors, "fullName")}</label>
 <label class="field" for="email"><span class="field-label">Work email<span class="required-marker" aria-hidden="true">*</span></span><input id="email" name="email" type="email" autocomplete="email" maxlength="254" required value="${escapeHtml(values.email ?? "")}"${inputAttributes(errors, "email")}>${fieldError(errors, "email")}</label>
-<label class="field" for="phone"><span class="field-label">Phone number<span class="required-marker" aria-hidden="true">*</span></span><span class="phone-control"><select id="phoneCountry" name="phoneCountry" aria-label="Country calling code" required${inputAttributes(errors, "phoneCountry")}>${countryOptions(selectedCountry)}</select><input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="32" required value="${escapeHtml(values.phone ?? "")}" placeholder="${escapeHtml(selectedChoice.example)}" data-example="${escapeHtml(selectedChoice.example)}"${inputAttributes(errors, "phone")}></span>${fieldError(errors, "phoneCountry")}${fieldError(errors, "phone")}</label>
+<label class="field" for="phone"><span class="field-label">Phone number<span class="required-marker" aria-hidden="true">*</span></span><span class="phone-control"><select id="phoneCountry" name="phoneCountry" aria-label="Country calling code" required${inputAttributes(errors, "phoneCountry")}>${countryOptions(selectedCountry)}</select><input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="32" required value="${escapeHtml(values.phone ?? "")}" placeholder="${escapeHtml(selectedChoice.example)}" data-example="${escapeHtml(selectedChoice.example)}"${inputAttributes(errors, "phone")}></span><span class="phone-help" id="phone-help">For Pixii updates and offers.</span>${fieldError(errors, "phoneCountry")}${fieldError(errors, "phone")}</label>
 <label class="consent-row" for="consent"><input id="consent" name="consent" type="checkbox" value="accepted" required${errors.consent ? ' aria-invalid="true"' : ""}><span class="consent-copy">${escapeHtml(CONSENT_TEXT)}<span class="required-marker" aria-hidden="true">*</span></span></label>
 ${button}
-<p class="links">See our <a href="${PRIVACY_URL}">Privacy Policy</a> and <a href="/notice">Notice at Collection</a>.</p>
+<p class="links"><a href="${PRIVACY_URL}">Privacy Policy</a><span aria-hidden="true">·</span><a href="/notice">Notice of Collection</a></p>
 ${containerEnd}
 ${phoneBehaviorScript()}
 </section>`;
 }
 
 export function renderSignupPage(input: SignupPageInput): string {
-  return documentShell("Connect to event Wi-Fi | Pixii", renderSignupCard(input, "live"));
+  return documentShell("Connect to event Wi-Fi | Pixii", renderSignupCard(input, "live"), "app-theme");
 }
 
 export function renderPublicSignupPage(input: SignupPageInput): string {
-  return documentShell("Connect to event Wi-Fi | Pixii", renderSignupCard(input, "public"));
+  return documentShell("Connect to event Wi-Fi | Pixii", renderSignupCard(input, "public"), "app-theme");
 }
 
 export function renderPreviewPage(): string {
   const content = `<p class="preview-banner"><strong>Form preview</strong> — details entered here are not submitted.</p>
 ${renderSignupCard({ formState: "" }, "preview")}`;
-  return documentShell("Form preview | Pixii", content, "preview-page");
+  return documentShell("Form preview | Pixii", content, "app-theme preview-page");
 }
 
 function safeScriptJson(value: string): string {
@@ -189,12 +190,13 @@ function safeScriptJson(value: string): string {
 export function renderWaitingPage(registrationId: string, statusToken: string, requiresGate = true): string {
   const endpoint = `/router/fas/status/${encodeURIComponent(registrationId)}?token=${encodeURIComponent(statusToken)}`;
   if (requiresGate) {
-    const content = `${flybyContent(logo())}<noscript><p class="flyby-noscript">Please enable JavaScript, then refresh this page to finish connecting.</p></noscript><script>const endpoint=${safeScriptJson(endpoint)};window.pixiiAd={endpoint,registrationId:${safeScriptJson(registrationId)},token:${safeScriptJson(statusToken)},connectedHtml:${safeScriptJson(connectedContent())},preview:false};</script><script src="/assets/connected-v2.js" defer></script><script src="/assets/flybyjing/v1/experience-v5.js" defer></script>`;
-    return documentShell("Connecting | Pixii", content, "flyby-ad");
+    const content = `${flybyContent()}<noscript><p class="flyby-noscript">Please enable JavaScript, then refresh this page to finish connecting.</p></noscript><script>const endpoint=${safeScriptJson(endpoint)};window.pixiiAd={endpoint,registrationId:${safeScriptJson(registrationId)},token:${safeScriptJson(statusToken)},connectedHtml:${safeScriptJson(connectedContent())},preview:false};</script><script src="/assets/connected-v3.js" defer></script><script src="/assets/flybyjing/v1/experience-v6.js" defer></script>`;
+    return documentShell("Connecting | Pixii", content, "app-theme flyby-ad");
   }
   const content = `${connectingContent()}<noscript><p>JavaScript is off. Wait a moment, then refresh this page to check your connection.</p></noscript>
-<script src="/assets/connected-v2.js" defer></script><script>(()=>{const endpoint=${safeScriptJson(endpoint)};const shownAt=performance.now();const check=async()=>{try{const response=await fetch(endpoint,{headers:{accept:"application/json"},cache:"no-store"});if(!response.ok)throw new Error();const data=await response.json();if(data.status==="connected"&&performance.now()-shownAt>=6000){document.querySelector("main").innerHTML=${safeScriptJson(connectedContent())};document.title="You\u2019re online | Pixii";document.dispatchEvent(new Event("pixii:connected"));return;}if(data.status==="expired"){document.getElementById("status-message").textContent="This connection request expired. Rejoin the Wi-Fi and try again.";return;}setTimeout(check,500);}catch{setTimeout(check,1800);}};setTimeout(check,700);})();</script>`;
-  return documentShell("Connecting | Pixii", content);
+<script src="/assets/connected-v3.js" defer></script><script>(()=>{const endpoint=${safeScriptJson(endpoint)};const shownAt=performance.now();const check=async()=>{try{const response=await fetch(endpoint,{headers:{accept:"application/json"},cache:"no-store"});if(!response.ok)throw new Error();const data=await response.json();if(data.status==="connected"&&performance.now()-shownAt>=6000){document.querySelector("main").innerHTML=${safeScriptJson(connectedContent())};document.title="You\u2019re online | Pixii";document.body.classList.add("app-theme");document.dispatchEvent(new Event("pixii:connected"));return;}if(data.status==="expired"){document.getElementById("status-message").textContent="This connection request expired. Rejoin the Wi-Fi and try again.";return;}setTimeout(check,500);}catch{setTimeout(check,1800);}};setTimeout(check,700);})();</script>`;
+  // Load the scoped theme for the eventual success view without changing legacy waiting screens.
+  return documentShell("Connecting | Pixii", `<style>${APP_THEME_STYLES}</style>${content}`);
 }
 
 function sponsor(description: string): string {
@@ -206,21 +208,22 @@ function connectingContent(): string {
 }
 
 export function connectedContent(): string {
-  return `<section class="card status online">${logo()}<p class="connection-state"><span class="status-dot is-connected" aria-hidden="true"></span>Connected</p><h1>You’re online</h1><a class="arrow-cta" href="${PIXII_CTA_URL}" target="_blank" rel="noopener noreferrer" aria-describedby="redirect-note"><span class="cta-copy">Design an Amazon listing in 2 minutes.<small>Free, no credit card.</small><span class="browser-action" id="browser-action">Open in your browser</span></span><svg class="cta-arrow" viewBox="0 0 48 32" fill="none" aria-hidden="true"><path d="M3 16h40M30 3l13 13-13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="cta-progress" role="progressbar" aria-label="Opening Pixii" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span aria-hidden="true"></span></span></a><p class="redirect-note" id="redirect-note" aria-live="polite">Or wait <span id="redirect-seconds">5</span> seconds to open Pixii here.</p><div class="browser-fallback" id="browser-fallback" hidden><a id="open-here" href="${PIXII_CTA_URL}">Open Pixii here</a><button type="button" id="copy-pixii-link">Copy link</button><p id="copy-status" role="status"></p><input id="pixii-link" type="text" readonly aria-label="Pixii website link" hidden></div></section>`;
+  // CircleCheck and ArrowRight paths from lucide-react (ISC), matching the app's 1.5px icons.
+  return `<section class="card status online"><h2 class="connection-state" tabindex="-1" aria-describedby="redirect-note"><svg class="status-dot is-connected" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>You’re online</h2><h1>Now try it on your product.</h1><p class="online-subtitle">Let Pixii do the design.</p><div class="online-action"><a class="arrow-cta" href="${PIXII_CTA_URL}" target="_blank" rel="noopener noreferrer" aria-describedby="redirect-note"><span class="cta-copy">Design my listing<span class="browser-action" id="browser-action">Open in your browser</span></span><svg class="cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a><p class="cta-note">Free, no credit card needed.</p><p class="redirect-note" id="redirect-note">Opening Pixii in <span id="redirect-seconds">5</span> seconds...</p><div class="cta-progress" role="progressbar" aria-label="Opening Pixii" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span aria-hidden="true"></span></div><div class="browser-fallback" id="browser-fallback" hidden><a id="open-here" href="${PIXII_CTA_URL}">Open Pixii here</a><button type="button" id="copy-pixii-link">Copy link</button><p id="copy-status" role="status"></p><input id="pixii-link" type="text" readonly aria-label="Pixii website link" hidden></div></div></section>`;
 }
 
 export function renderConnectedPage(): string {
-  return documentShell("You're online | Pixii", connectedContent() + '<script src="/assets/connected-v2.js" defer></script>');
+  return documentShell("You're online | Pixii", connectedContent() + '<script src="/assets/connected-v3.js" defer></script>', "app-theme");
 }
 
 export function renderConnectingPreviewPage(): string {
-  const content = `${flybyContent(logo())}<script>window.pixiiAd={preview:true,registrationId:"preview"};</script><script src="/assets/flybyjing/v1/experience-v5.js" defer></script>`;
-  return documentShell("Connecting preview | Pixii", content, "flyby-ad");
+  const content = `${flybyContent()}<script>window.pixiiAd={preview:true,registrationId:"preview"};</script><script src="/assets/flybyjing/v1/experience-v6.js" defer></script>`;
+  return documentShell("Connecting preview | Pixii", content, "app-theme flyby-ad");
 }
 
 export function renderTeamTestPage(input: SignupPageInput): string {
   const content = `<nav class="team-nav" aria-label="Team test"><a href="/preview">Public preview</a><a href="/preview/data">Test submissions</a></nav><p class="team-note"><strong>Team test:</strong> this writes to the production registrations database as <code>team_test</code>, but it does not unlock Wi-Fi.</p>${renderSignupCard(input, "team-test")}`;
-  return documentShell("Team form test | Pixii", content, "preview-page");
+  return documentShell("Team form test | Pixii", content, "app-theme preview-page");
 }
 
 

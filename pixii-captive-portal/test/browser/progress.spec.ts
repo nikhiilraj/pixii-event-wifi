@@ -34,11 +34,11 @@ test("connecting progress fills across seven visible seconds and labels match th
   await expect(progress.locator("span")).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
 });
 
-test("connected CTA fills for five seconds then opens Pixii with attribution", async ({ page }, testInfo) => {
+test("connected neutral progress fills for five seconds then opens Pixii with attribution", async ({ page }, testInfo) => {
   await interceptDestination(page);
   await page.clock.install();
   await page.goto(base + "/preview/connected");
-  await expect(page.getByText("Free, no credit card.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Free, no credit card needed.", { exact: true })).toBeVisible();
   await page.clock.runFor(2400);
   await expect(page).toHaveURL(base + "/preview/connected");
   const progress = page.getByRole("progressbar", { name: "Opening Pixii" });
@@ -93,7 +93,7 @@ test("pending connections never redirect and dynamically confirmed connections s
 
 test("a late connected runtime still initializes the visible connected page", async ({ page }) => {
   await interceptDestination(page);
-  await page.route("**/assets/connected-v2.js", async route => {
+  await page.route("**/assets/connected-v3.js", async route => {
     await new Promise(resolve => setTimeout(resolve, 1200));
     await route.continue();
   });
