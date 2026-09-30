@@ -15,6 +15,10 @@ export default defineConfig({
             BOOTSTRAP_HMAC_KEY: "test-bootstrap-hmac-key-0123456789abcdef",
             PREVIEW_TEST_PASSWORD: "test-preview-password-0123456789",
             ENVIRONMENT: "test",
+            // Legacy-flow tests must not inherit live rollout switches.
+            // Analytics suites opt in explicitly with their own synthetic env.
+            ANALYTICS_ENABLED: "false",
+            PIXELS_ENABLED: "false",
             TEST_MIGRATIONS: migrations
           }
         }

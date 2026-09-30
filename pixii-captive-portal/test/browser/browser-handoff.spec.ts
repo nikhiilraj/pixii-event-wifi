@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-const base = "http://127.0.0.1:8787";
-const destination = "https://www.pixii.ai/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
+const base = `http://127.0.0.1:${process.env.PIXII_BROWSER_PORT || "8787"}`;
+const destination = "https://www.pixii.ai/ads/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
 const platforms = [
   { name: "iPhone", ua: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148", prefix: "x-safari-https://", label: "Safari" },
   { name: "iPad desktop mode", ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15", prefix: "x-safari-https://", label: "Safari" },
@@ -45,7 +45,10 @@ for (const platform of platforms) {
     const context = await browser.newContext({ userAgent: platform.ua });
     await context.route("https://www.pixii.ai/**", route => route.fulfill({ body: "Pixii destination" }));
     const page = await context.newPage();
-    await page.clock.install();
+    // Keep host scheduling / assertions from consuming the final 100ms margin.
+    const clockStart = Date.now();
+    await page.clock.install({ time: clockStart });
+    await page.clock.pauseAt(clockStart + 1000);
     await page.goto(base + "/preview/connected");
     await page.clock.runFor(4900);
     await expect(page).toHaveURL(base + "/preview/connected");

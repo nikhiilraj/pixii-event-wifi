@@ -16,6 +16,11 @@ export async function runScheduled(env: Env, scheduledTime = Date.now()): Promis
   let registrationsDeleted = 0;
 
   try {
+    // Analytics retention is independent of operational lead/auth retention.
+    try { await env.DB.batch([
+      env.DB.prepare("DELETE FROM attribution_handoffs WHERE expires_at <= ?").bind(nowMs),
+      env.DB.prepare("DELETE FROM analytics_visits WHERE created_at < ?").bind(deleteBefore)
+    ]); } catch { console.warn(JSON.stringify({ event: "wifi_analytics_cleanup_deferred" })); }
     for (let batch = 0; batch < MAX_BATCHES; batch += 1) {
       const queues = await repository.expireOperationalRows(now, deleteBefore, BATCH_SIZE);
       const registrations = await repository.deleteExpiredRegistrations(now, BATCH_SIZE);

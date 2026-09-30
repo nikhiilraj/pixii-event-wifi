@@ -5,7 +5,7 @@ export default defineConfig({
   outputDir: "./test-results/browser",
   webServer: {
     command: "npm run dev:browser",
-    url: "http://127.0.0.1:8787/health",
+    url: `http://127.0.0.1:${process.env.PIXII_BROWSER_PORT || "8787"}/health`,
     reuseExistingServer: false,
     timeout: 120_000
   },

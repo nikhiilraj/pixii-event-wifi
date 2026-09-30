@@ -27,7 +27,9 @@ import {
   type SignupValues
 } from "./portal";
 import { D1Repository, type AuthorizationStatus } from "./repository";
-import type { Env } from "./types";
+import type { Env, HandlerContext } from "./types";
+import { backgroundAnalytics, enrollment, formTracking } from "./analytics";
+import { cleanFinalResponse } from "./tracking-http";
 import { parseBody, RequestParseError, validateSignup } from "./validation";
 import { FasDiagnosticError, logFasRejection, type FasDiagnosticContext } from "./fas-diagnostics";
 
@@ -90,7 +92,7 @@ export async function handleFasPage(request: Request, env: Env): Promise<Respons
       env.FORM_SIGNING_KEY
     );
     diagnostic.stage = "render";
-    return secureHtml(renderSignupPage({ formState: state, fas, iv }));
+    return secureHtml(renderSignupPage({ formState: state, fas, iv, analyticsContext: await formTracking(request, env, "wifi") }));
   } catch (error) {
     const reference = logFasRejection("/router/fas", diagnostic, error);
     return secureHtml(renderDeniedPage(reference), 403, { "X-Pixii-Request-ID": reference });
@@ -148,7 +150,7 @@ function signupValues(body: Record<string, unknown>): Partial<SignupValues> {
   };
 }
 
-export async function handleFasSubmit(request: Request, env: Env): Promise<Response> {
+export async function handleFasSubmit(request: Request, env: Env, ctx?: HandlerContext): Promise<Response> {
   let body: Record<string, unknown>;
   try {
     body = await parseBody(request, FORM_BODY_LIMIT);
@@ -190,7 +192,8 @@ export async function handleFasSubmit(request: Request, env: Env): Promise<Respo
       fas,
       iv,
       values: signupValues(body),
-      errors: validation.errors
+      errors: validation.errors,
+      analyticsContext: typeof body.analyticsContext === "string" ? body.analyticsContext : ""
     }), 400);
   }
 
@@ -221,6 +224,7 @@ export async function handleFasSubmit(request: Request, env: Env): Promise<Respo
       authorizationStatus: "pending",
       formIdempotencyKey,
       submissionSource: "wifi",
+      analyticsVisitId: body.analyticsOptOut === "1" ? null : await enrollment(request, env, body.analyticsContext, "wifi"),
       requiresAdGate: true
     }, {
       rhid,
@@ -233,13 +237,14 @@ export async function handleFasSubmit(request: Request, env: Env): Promise<Respo
       availableAt: new Date(now.getTime() + CONNECTING_MINIMUM_MS).toISOString()
     });
     const gate = await repository.readAdGate(result.id);
+    if (ctx) backgroundAnalytics(env, ctx);
     const statusToken = await signStatusState(
       result.id,
       Date.now() + FORM_LIFETIME_MS,
       env.FORM_SIGNING_KEY,
       Date.now() + (gate?.ad_gate_required === 1 ? CONNECTING_MINIMUM_MS : 6000)
     );
-    return secureHtml(renderWaitingPage(result.id, statusToken, gate?.ad_gate_required === 1), 202, { "Referrer-Policy": "same-origin" });
+    return secureHtml(renderWaitingPage(result.id, statusToken, gate?.ad_gate_required === 1), 202, { "Referrer-Policy": "origin" });
   } catch {
     return secureHtml(renderDeniedPage(), 503);
   }
@@ -265,7 +270,9 @@ export async function handleFasStatus(request: Request, env: Env): Promise<Respo
       const status = await repository.readAuthorizationStatus(registrationId, new Date(Date.now()).toISOString());
       if (!status) return notFound();
       const gate = await repository.readAdGate(registrationId);
-      return jsonResponse({ status: status === "acknowledged" && gate?.ad_gate_required !== 1 && Date.now() < state.readyAt ? "pending" : browserStatus(status) });
+      const shownStatus = status === "acknowledged" && gate?.ad_gate_required !== 1 && Date.now() < state.readyAt ? "pending" : browserStatus(status);
+      const response = jsonResponse({ status: shownStatus });
+      return shownStatus === "connected" ? cleanFinalResponse(response, env, registrationId) : response;
     } catch {
       return jsonResponse({ error: "temporarily_unavailable" }, 503);
     }
@@ -289,7 +296,7 @@ function decodeHex(value: string): Uint8Array {
   return bytes;
 }
 
-export async function handleAuthmon(request: Request, env: Env): Promise<Response> {
+export async function handleAuthmon(request: Request, env: Env, ctx?: HandlerContext): Promise<Response> {
   const contentType = request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
   if (contentType !== "application/x-www-form-urlencoded") return plainResponse("", 415);
 
@@ -349,6 +356,7 @@ export async function handleAuthmon(request: Request, env: Env): Promise<Respons
       now,
       limit: 4
     });
+    if (ctx) backgroundAnalytics(env, ctx);
     return plainResponse(encodeAuthList(result.records.map(({ authRecord }) => authRecord)));
   } catch {
     return plainResponse("", 400);

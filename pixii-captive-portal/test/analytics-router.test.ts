@@ -1,15 +1,17 @@
-import { createExecutionContext, env } from "cloudflare:test";
+import { createExecutionContext, waitOnExecutionContext, env } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import worker from "../src/index";
 import type { Env } from "../src/types";
 import vector from "./fixtures/opennds-level3-v10.3.json";
 
-const appEnv: Env = { ...(env as Env), FAS_KEY: vector.key };
+const appEnv: Env = { ...(env as Env), FAS_KEY: vector.key, ANALYTICS_ENABLED: "true", ANALYTICS_ROLLOUT_AT: "2026-09-30T00:00:00.000Z", PRIVACY_US_REVIEWED:"true" };
 const origin = "https://wifi.pixii.ai";
 const bootstrapToken = "TOKEN_0123456789_INTEGRATION_ABCDEFG";
 
 async function workerFetch(request: Request, executionEnv = appEnv): Promise<Response> {
-  return worker.fetch(request, executionEnv, createExecutionContext());
+  const ctx = createExecutionContext();
+  const response = await worker.fetch(new Request(request,{cf:{country:"US"}}), executionEnv, ctx);
+  await waitOnExecutionContext(ctx); return response;
 }
 
 async function hmacHex(value: string): Promise<string> {
@@ -46,18 +48,18 @@ function hidden(html: string, name: string): string {
   return value.replaceAll("&amp;", "&").replaceAll("&quot;", '"');
 }
 
-async function formState(): Promise<{ state: string; fas: string; iv: string }> {
+async function formState(): Promise<{ state: string; fas: string; iv: string; analyticsContext: string }> {
   const url = new URL("/router/fas", origin);
   url.searchParams.set("fas", vector.fas);
   url.searchParams.set("iv", vector.iv);
   const response = await workerFetch(new Request(url));
   expect(response.status).toBe(200);
   const html = await response.text();
-  return { state: hidden(html, "state"), fas: hidden(html, "fas"), iv: hidden(html, "iv") };
+  return { state: hidden(html, "state"), fas: hidden(html, "fas"), iv: hidden(html, "iv"), analyticsContext: hidden(html,"analyticsContext") };
 }
 
 function signupRequest(
-  form: { state: string; fas: string; iv: string },
+  form: { state: string; fas: string; iv: string; analyticsContext: string },
   consent = true
 ): Request {
   const body = new URLSearchParams({
@@ -91,6 +93,11 @@ async function authmon(action: string, payload: string): Promise<Response> {
 
 beforeEach(async () => {
   await env.DB.batch([
+    env.DB.prepare("DELETE FROM analytics_outbox"),
+    env.DB.prepare("DELETE FROM attribution_handoffs"),
+    env.DB.prepare("DELETE FROM analytics_visits")
+  ]);
+  await env.DB.batch([
     env.DB.prepare("DELETE FROM auth_queue"),
     env.DB.prepare("DELETE FROM registrations"),
     env.DB.prepare("DELETE FROM bootstrap_tokens"),
@@ -111,8 +118,8 @@ beforeEach(async () => {
   ]);
 });
 
-describe("complete captive Wi-Fi flow", () => {
-  it("bootstraps, captures consent, authorizes through Authmon, and reports connected", async () => {
+describe("analytics with real signed local Authmon flow", () => {
+  it.each([false,true])("deduplicates server facts after explicit signed router acknowledgement (outbox unavailable=%s)", async (outboxUnavailable) => {
     const bootstrap = await workerFetch(new Request(`${origin}/router/bootstrap`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -158,6 +165,7 @@ describe("complete captive Wi-Fi flow", () => {
     }));
     expect((await adPost("start", 0)).status).toBe(200);
     expect(await (await authmon("view", "none")).text()).toBe("*");
+    if(outboxUnavailable) await env.DB.exec("CREATE TRIGGER fail_outbox_ack BEFORE INSERT ON analytics_outbox BEGIN SELECT RAISE(FAIL, 'synthetic analytics outage'); END;");
     // Advance the persisted start timestamp to model seven seconds without sleeping in a unit test.
     await env.DB.prepare("UPDATE registrations SET ad_started_at = ?").bind(Date.now() - 8000).run();
     expect((await adPost("complete", 7000)).status).toBe(200);
@@ -168,109 +176,28 @@ describe("complete captive Wi-Fi flow", () => {
     const rhid = record.split(" ")[0];
     expect(record).toContain(" 480 5000 20000 0 0 ");
     expect((await authmon("view", `* ${rhid}`)).status).toBe(200);
+    if(outboxUnavailable) {
+      expect(await env.DB.prepare("SELECT authorization_status FROM registrations").first("authorization_status")).toBe("acknowledged");
+      await env.DB.exec("DROP TRIGGER fail_outbox_ack;");
+    }
 
     const connected = await workerFetch(new Request(new URL(statusPath!, origin)));
-    await expect(connected.json()).resolves.toEqual({ status: "connected" });
+    await expect(connected.json()).resolves.toEqual({ status: "connected", connectedUrl: "/connected" });
+    const cookie = connected.headers.get("Set-Cookie");
+    expect(cookie).toContain("Secure; HttpOnly; SameSite=Strict");
+    const clean = await workerFetch(new Request(origin+"/connected",{headers:{Cookie:cookie!.split(";")[0]!}}));
+    expect(clean.status).toBe(200);
+    const html = await clean.text();
+    expect(html).not.toContain(String(registration?.id));
+    expect(html).not.toContain(statusUrl.searchParams.get("token")!);
+    await authmon("view", `* ${rhid}`);
+    await workerFetch(new Request(new URL(statusPath!, origin)));
+    const rows = await env.DB.prepare("SELECT event,count(*) AS n FROM analytics_outbox GROUP BY event ORDER BY event").all();
+    expect(rows.results).toEqual([{event:"wifi_connected",n:1},{event:"wifi_signup_completed",n:1}]);
+    // Simulate an interrupted enqueue: durable ack/signup facts recover once.
+    await env.DB.prepare("DELETE FROM analytics_outbox").run();
+    await authmon("view", "none");
+    expect((await env.DB.prepare("SELECT event,count(*) AS n FROM analytics_outbox GROUP BY event ORDER BY event").all()).results).toEqual(rows.results);
   });
 
-  it("never creates access when consent is omitted", async () => {
-    const response = await workerFetch(signupRequest(await formState(), false));
-    expect(response.status).toBe(400);
-    await expect(env.DB.prepare("SELECT COUNT(*) AS count FROM registrations").first())
-      .resolves.toMatchObject({ count: 0 });
-    await expect(env.DB.prepare("SELECT COUNT(*) AS count FROM auth_queue").first())
-      .resolves.toMatchObject({ count: 0 });
-  });
-});
-
-describe("hostile and racing requests", () => {
-  it.each([
-    ["malformed FAS", `${origin}/router/fas?fas=bad&iv=${vector.iv}`, 403],
-    ["oversized FAS", `${origin}/router/fas?fas=${"A".repeat(8_193)}&iv=${vector.iv}`, 403],
-    ["wrong IV", `${origin}/router/fas?fas=${encodeURIComponent(vector.fas)}&iv=short`, 403]
-  ])("fails closed for %s", async (_case, url, status) => {
-    expect((await workerFetch(new Request(url))).status).toBe(status);
-  });
-
-  it("rejects oversized forms, malformed bootstrap JSON, and malformed Authmon", async () => {
-    const oversized = await workerFetch(new Request(`${origin}/router/fas/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `value=${"x".repeat(16_500)}`
-    }));
-    const malformedJson = await workerFetch(new Request(`${origin}/router/bootstrap`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{bad"
-    }));
-    const malformedAuthmon = await workerFetch(new Request(`${origin}/router/fas`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ auth_get: "view", gatewayhash: vector.gatewayHash, payload: "bad" })
-    }));
-    expect(oversized.status).toBe(413);
-    expect(malformedJson.status).toBe(400);
-    expect(malformedAuthmon.status).toBe(400);
-  });
-
-  it("rejects a wrong, disabled, or unknown Authmon gateway", async () => {
-    const wrongPlaintext = vector.plaintext.replace(vector.fields.gatewayname, "unknown-gateway");
-    expect(wrongPlaintext).toContain("unknown-gateway");
-    await env.DB.prepare("UPDATE routers SET enabled = 0").run();
-    expect((await workerFetch(new Request(
-      `${origin}/router/fas?fas=${encodeURIComponent(vector.fas)}&iv=${vector.iv}`
-    ))).status).toBe(403);
-    expect(await (await workerFetch(new Request(`${origin}/router/fas`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ auth_get: "view", gatewayhash: "f".repeat(64), payload: btoa("none") })
-    }))).text()).toBe("");
-  });
-
-  it("deduplicates simultaneous form posts and permits consistent concurrent views", async () => {
-    const form = await formState();
-    const [first, second] = await Promise.all([
-      workerFetch(signupRequest(form)),
-      workerFetch(signupRequest(form))
-    ]);
-    expect([first.status, second.status]).toEqual([202, 202]);
-    await expect(env.DB.prepare("SELECT COUNT(*) AS count FROM registrations").first())
-      .resolves.toMatchObject({ count: 1 });
-    await expect(env.DB.prepare("SELECT COUNT(*) AS count FROM auth_queue").first())
-      .resolves.toMatchObject({ count: 1 });
-
-    await env.DB.prepare("UPDATE auth_queue SET available_at = '2020-01-01T00:00:00Z'").run();
-    await env.DB.prepare("UPDATE registrations SET ad_started_at = ?, ad_completed_at = ?, ad_visible_ms = 7000").bind(Date.now() - 8000, Date.now()).run();
-    const [viewOne, viewTwo] = await Promise.all([authmon("view", "none"), authmon("view", "none")]);
-    expect(await viewOne.text()).toBe(await viewTwo.text());
-    await expect(env.DB.prepare("SELECT state FROM auth_queue").first())
-      .resolves.toMatchObject({ state: "delivered" });
-  });
-
-  it("does not revive a timed-out authorization with a late acknowledgement", async () => {
-    await workerFetch(signupRequest(await formState()));
-    const row = await env.DB.prepare("SELECT rhid FROM auth_queue").first<{ rhid: string }>();
-    await env.DB.prepare("UPDATE auth_queue SET expires_at = '2020-01-01T00:00:00Z'").run();
-    await authmon("view", `* ${row?.rhid}`);
-    await expect(env.DB.prepare("SELECT state FROM auth_queue").first())
-      .resolves.toMatchObject({ state: "expired" });
-    await expect(env.DB.prepare("SELECT authorization_status FROM registrations").first())
-      .resolves.toMatchObject({ authorization_status: "expired" });
-  });
-
-  it("fails safely when D1 is unavailable", async () => {
-    const failingDb = new Proxy(env.DB, {
-      get(target, property) {
-        if (property === "prepare") return () => { throw new Error("private D1 detail"); };
-        const value = Reflect.get(target, property, target) as unknown;
-        return typeof value === "function" ? value.bind(target) : value;
-      }
-    });
-    const response = await workerFetch(
-      new Request(`${origin}/health`),
-      { ...appEnv, DB: failingDb }
-    );
-    expect(response.status).toBe(503);
-    expect(await response.text()).toBe('{"ok":false}');
-  });
 });

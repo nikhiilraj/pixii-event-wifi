@@ -9,7 +9,7 @@ import {
 } from "../src/portal";
 
 const ctaUrl =
-  "https://www.pixii.ai/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
+  "https://www.pixii.ai/ads/?utm_source=event_wifi&utm_medium=captive_portal&utm_campaign=amazon_unboxed_sf_2026";
 
 describe("signup portal", () => {
   it("keeps signup focused on connecting and shows product proof only after signup", () => {
@@ -59,8 +59,9 @@ describe("signup portal", () => {
     expect(html).toContain('href="/notice"');
     expect(html).toContain("I agree to receive marketing communications from Pixii.ai. Unsubscribe anytime.");
     expect(html).not.toContain("Required to connect.");
-    expect(html.match(/class="required-marker"/gu)).toHaveLength(4);
-    expect(html.match(/class="required-marker" aria-hidden="true">\*<\/span>/gu)).toHaveLength(4);
+    expect(html).not.toContain('class="required-marker"');
+    for (const name of ["fullName", "email", "phone"]) expect(html).toMatch(new RegExp(`name="${name}"[^>]+required`));
+    expect(html).toContain('aria-describedby="phone-error"');
   });
 
   it("includes inline field errors while marking consent required without an error sentence", () => {
@@ -112,9 +113,9 @@ describe("portal result pages", () => {
     expect(html).toContain("You’re online</h2>");
     expect(html).not.toContain("Enjoy the fast Wi-Fi.");
     expect(html).toContain('class="arrow-cta"');
-    expect(html).toContain("Design my listing");
+    expect(html).toContain("Design my ads");
     expect(html).toContain('class="status-dot is-connected"');
-    expect(html).toContain(ctaUrl);
+    expect(html.replaceAll("&amp;", "&")).toContain(ctaUrl);
   });
 
   it("renders a generic denial without echoing a supplied reason", () => {

@@ -8,7 +8,7 @@
     "test": "NODE_OPTIONS=--disable-warning=DEP0040 vitest run",
     "test:issuer": "vitest run --config vitest.node.config.mjs",
     "test:browser": "playwright test",
-    "dev:browser": "node scripts/seed-browser-db.mjs && wrangler dev --local --persist-to .wrangler/flyby-browser-state --ip 127.0.0.1 --port 8787 --log-level error --var FAS_KEY:c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646 --var FORM_SIGNING_KEY:test-browser-form-signing-key-0123456789abcdef --var BOOTSTRAP_HMAC_KEY:test-browser-bootstrap-key-0123456789abcdef --var PREVIEW_TEST_PASSWORD:test-preview-password-0123456789 --var ENVIRONMENT:test",
+    "dev:browser": "node scripts/seed-browser-db.mjs && wrangler dev --local --persist-to .wrangler/flyby-browser-state --ip 127.0.0.1 --port ${PIXII_BROWSER_PORT:-8787} --log-level error --var FAS_KEY:c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646 --var FORM_SIGNING_KEY:test-browser-form-signing-key-0123456789abcdef --var BOOTSTRAP_HMAC_KEY:test-browser-bootstrap-key-0123456789abcdef --var PREVIEW_TEST_PASSWORD:test-preview-password-0123456789 --var ENVIRONMENT:test --var ANALYTICS_ENABLED:false --var PIXELS_ENABLED:false",
     "dev": "wrangler dev --local",
     "deploy": "wrangler deploy --keep-vars --strict",
     "types": "wrangler types"

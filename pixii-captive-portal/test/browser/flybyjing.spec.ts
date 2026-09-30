@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-const base = "http://127.0.0.1:8787";
+const base = `http://127.0.0.1:${process.env.PIXII_BROWSER_PORT || "8787"}`;
 
 async function signup(page: Page) {
   await page.goto(base + "/");
